@@ -1,0 +1,19 @@
+# Tailor product rules
+
+Premium offline-first atelier PWA. Treat every change as ship-ready Play Store quality.
+
+## Non-negotiables
+
+- Performance: lazy-load heavy islands (Three, Konva, Recharts, jsPDF); keep route bundles lean; prefer `optimizePackageImports`.
+- Accessibility / WCAG: skip link, labels, roles, focus, contrast, pinch-zoom allowed, honor `prefers-reduced-motion`.
+- Responsive: mobile-first, safe-area insets, Apple-inspired spacing (`space-y-6`, generous padding).
+- Offline / PWA: Serwist caching, IndexedDB (Dexie) with versioned migrations, graceful `/~offline`.
+- Resilience: App Router `error.tsx` + feature error boundaries around WebGL/camera/Konva.
+- Camera: request only on user gesture; clear denied / unsupported / HTTPS messaging.
+- Visual system: teal atelier tokens, glassmorphism (`glass-panel`), premium gradients, Outfit/Syne typography, skeleton loaders, micro-interactions — no cream/terracotta AI clichés, no purple glow defaults.
+- Code hygiene: no unused deps/components, no duplicated utilities, colocated feature modules.
+- Tests + docs: unit/component coverage for core logic; keep README and `docs/` current including Vercel deploy.
+
+## Stack notes
+
+Next.js App Router (read `node_modules/next/dist/docs/` before API changes), Tailwind v4, shadcn/ui, Framer Motion, Zustand, Dexie, Serwist.

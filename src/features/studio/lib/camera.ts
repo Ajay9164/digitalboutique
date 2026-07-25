@@ -96,8 +96,34 @@ export async function requestCameraStream(
   }
 }
 
-export function stopStream(stream: MediaStream | null): void {
-  stream?.getTracks().forEach((track) => track.stop());
+/**
+ * Stop every track on a MediaStream so the camera LED turns off and the
+ * device mic/camera hardware is released. Safe to call repeatedly.
+ */
+export function stopStream(stream: MediaStream | null | undefined): void {
+  if (!stream) return;
+  for (const track of stream.getTracks()) {
+    try {
+      track.stop();
+    } catch {
+      // Already ended / browser quirk — ignore.
+    }
+  }
+}
+
+/** Detach a stream from a video element and stop its tracks. */
+export function releaseVideoStream(video: HTMLVideoElement | null): void {
+  if (!video) return;
+  const stream = video.srcObject;
+  if (stream instanceof MediaStream) {
+    stopStream(stream);
+  }
+  video.srcObject = null;
+  try {
+    video.load();
+  } catch {
+    // Some browsers throw when load() is called mid-teardown.
+  }
 }
 
 /**

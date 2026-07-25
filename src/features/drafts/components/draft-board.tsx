@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import type { ConstructionStepId } from "@/features/drafts/data/construction-steps";
 import {
   DRAFT_VIEWBOX,
@@ -120,7 +121,7 @@ function FormulaLabel({
         textAnchor={anchor}
         className={cn(
           "fill-current text-[6.5px] font-semibold tracking-wide",
-          active ? "text-primary" : "text-muted-foreground",
+          active ? "text-primary" : "text-foreground/75",
         )}
       >
         {FORMULA_LABELS[stepId]}

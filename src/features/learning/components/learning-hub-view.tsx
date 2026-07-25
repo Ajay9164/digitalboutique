@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Flame, Gauge, GraduationCap, Layers3 } from "lucide-react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import Link from "next/link";
 import {
   AnimatedMeter,

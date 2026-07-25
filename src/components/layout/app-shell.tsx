@@ -1,10 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeveloperFooter } from "@/components/layout/developer-footer";
 import { FloatingActionButton } from "@/components/layout/floating-action-button";
 import { TopHeader } from "@/components/layout/top-header";
-import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
+
+const PwaInstallBanner = dynamic(
+  () =>
+    import("@/components/pwa/pwa-install-banner").then((m) => m.PwaInstallBanner),
+  { ssr: false },
+);
 
 type AppShellProps = {
   children: React.ReactNode;

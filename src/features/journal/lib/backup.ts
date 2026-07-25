@@ -63,7 +63,11 @@ export async function createProject(input: ProjectInput): Promise<JournalProject
     createdAt: now,
     updatedAt: now,
   };
-  await db.projects.put(project);
+  const { error } = await withDb(async () => {
+    await db.projects.put(project);
+    return true;
+  }, false);
+  if (error) throw new Error(error);
   return project;
 }
 
@@ -71,11 +75,15 @@ export async function updateProject(
   id: string,
   input: ProjectInput,
 ): Promise<JournalProject> {
-  const existing = await db.projects.get(id);
-  if (!existing) throw new Error("Project not found.");
+  const existing = await withDb(
+    async () => db.projects.get(id),
+    undefined as JournalProject | undefined,
+  );
+  if (existing.error) throw new Error(existing.error);
+  if (!existing.data) throw new Error("Project not found.");
 
   const project: JournalProject = {
-    ...existing,
+    ...existing.data,
     name: input.name.trim() || "Untitled project",
     date: input.date,
     fabricPhoto: input.fabricPhoto,
@@ -87,12 +95,20 @@ export async function updateProject(
     learningProgress: input.learningProgress,
     updatedAt: new Date(),
   };
-  await db.projects.put(project);
+  const { error } = await withDb(async () => {
+    await db.projects.put(project);
+    return true;
+  }, false);
+  if (error) throw new Error(error);
   return reviveProject(project);
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  await db.projects.delete(id);
+  const { error } = await withDb(async () => {
+    await db.projects.delete(id);
+    return true;
+  }, false);
+  if (error) throw new Error(error);
 }
 
 export async function exportBackup(): Promise<JournalBackup> {
@@ -141,11 +157,14 @@ export async function importBackup(
 
   const revived = data.projects.map((project) => reviveProject(project));
 
-  if (mode === "replace") {
-    await db.projects.clear();
-  }
-
-  await db.projects.bulkPut(revived);
+  const { error } = await withDb(async () => {
+    if (mode === "replace") {
+      await db.projects.clear();
+    }
+    await db.projects.bulkPut(revived);
+    return true;
+  }, false);
+  if (error) throw new Error(error);
   return { imported: revived.length };
 }
 

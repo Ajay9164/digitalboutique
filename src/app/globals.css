@@ -159,17 +159,18 @@
 
 @utility glass-panel {
   border: 1px solid color-mix(in oklch, white 22%, transparent);
-  background: color-mix(in oklch, white 58%, transparent);
+  background: color-mix(in oklch, white 62%, transparent);
   backdrop-filter: blur(24px) saturate(1.35);
   -webkit-backdrop-filter: blur(24px) saturate(1.35);
   box-shadow:
     0 1px 0 color-mix(in oklch, white 55%, transparent) inset,
     0 18px 50px -24px rgba(15, 23, 28, 0.28);
+  color: var(--foreground);
 }
 
 .dark .glass-panel {
   border-color: color-mix(in oklch, white 14%, transparent);
-  background: color-mix(in oklch, black 42%, transparent);
+  background: color-mix(in oklch, black 48%, transparent);
   box-shadow:
     0 1px 0 color-mix(in oklch, white 8%, transparent) inset,
     0 22px 56px -20px rgba(0, 0, 0, 0.55);

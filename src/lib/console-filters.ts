@@ -12,10 +12,25 @@ const SUPPRESSED_WARN_PATTERNS: RegExp[] = [
   /warning X4122/i,
 ];
 
+/** Chrome logs this as info/log when a custom Install CTA owns beforeinstallprompt. */
+const SUPPRESSED_INFO_PATTERNS: RegExp[] = [
+  /Banner not shown:\s*beforeinstallpromptevent\.preventDefault\(\) called/i,
+];
+
 let installed = false;
+
+function textFromArgs(args: unknown[]): string {
+  return args
+    .map((arg) => (typeof arg === "string" ? arg : String(arg)))
+    .join(" ");
+}
 
 function shouldSuppressWarn(text: string): boolean {
   return SUPPRESSED_WARN_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+function shouldSuppressInfo(text: string): boolean {
+  return SUPPRESSED_INFO_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 /** @deprecated Prefer installConsoleWarnFilters — kept for call-site clarity. */
@@ -29,10 +44,20 @@ export function installConsoleWarnFilters(): void {
 
   const originalWarn = console.warn.bind(console);
   console.warn = (...args: unknown[]) => {
-    const text = args
-      .map((arg) => (typeof arg === "string" ? arg : String(arg)))
-      .join(" ");
-    if (shouldSuppressWarn(text)) return;
+    const text = textFromArgs(args);
+    if (shouldSuppressWarn(text) || shouldSuppressInfo(text)) return;
     originalWarn(...args);
+  };
+
+  const originalInfo = console.info.bind(console);
+  console.info = (...args: unknown[]) => {
+    if (shouldSuppressInfo(textFromArgs(args))) return;
+    originalInfo(...args);
+  };
+
+  const originalLog = console.log.bind(console);
+  console.log = (...args: unknown[]) => {
+    if (shouldSuppressInfo(textFromArgs(args))) return;
+    originalLog(...args);
   };
 }

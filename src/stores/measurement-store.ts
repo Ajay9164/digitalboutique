@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { db } from "@/lib/db";
+import { quietDbWrite } from "@/lib/db/safe";
 import {
   MEASUREMENT_MAP,
   type MeasurementId,
@@ -32,15 +33,19 @@ export const useMeasurementStore = create<MeasurementState>((set, get) => ({
 
   hydrate: async () => {
     if (get().hydrated) return;
-    const [unitRecord, learned] = await Promise.all([
-      db.meta.get(UNIT_META_ID),
-      db.learning.toArray(),
-    ]);
-    set({
-      hydrated: true,
-      unit: unitRecord?.value === "cm" ? "cm" : "in",
-      learnedIds: learned.map((record) => record.id as MeasurementId),
-    });
+    try {
+      const [unitRecord, learned] = await Promise.all([
+        db.meta.get(UNIT_META_ID),
+        db.learning.toArray(),
+      ]);
+      set({
+        hydrated: true,
+        unit: unitRecord?.value === "cm" ? "cm" : "in",
+        learnedIds: learned.map((record) => record.id as MeasurementId),
+      });
+    } catch {
+      set({ hydrated: true });
+    }
   },
 
   select: (id) =>
@@ -51,22 +56,24 @@ export const useMeasurementStore = create<MeasurementState>((set, get) => ({
 
   setUnit: (unit) => {
     set({ unit });
-    void db.meta.put({
-      id: UNIT_META_ID,
-      key: UNIT_META_ID,
-      value: unit,
-      updatedAt: new Date(),
-    });
+    quietDbWrite(() =>
+      db.meta.put({
+        id: UNIT_META_ID,
+        key: UNIT_META_ID,
+        value: unit,
+        updatedAt: new Date(),
+      }),
+    );
   },
 
   toggleLearned: (id) => {
     const { learnedIds } = get();
     if (learnedIds.includes(id)) {
       set({ learnedIds: learnedIds.filter((entry) => entry !== id) });
-      void db.learning.delete(id);
+      quietDbWrite(() => db.learning.delete(id));
     } else {
       set({ learnedIds: [...learnedIds, id] });
-      void db.learning.put({ id, learnedAt: new Date() });
+      quietDbWrite(() => db.learning.put({ id, learnedAt: new Date() }));
       const label = MEASUREMENT_MAP[id]?.label ?? id;
       void recordActivity({
         type: "measurement_learned",

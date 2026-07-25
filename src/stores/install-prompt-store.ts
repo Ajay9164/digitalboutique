@@ -11,7 +11,10 @@ type InstallState = {
   deferred: BeforeInstallPromptEvent | null;
   dismissed: boolean;
   outcome: "accepted" | "dismissed" | null;
+  /** True once the custom Install CTA is mounted and allowed to capture. */
+  captureEnabled: boolean;
   setDeferred: (event: BeforeInstallPromptEvent | null) => void;
+  setCaptureEnabled: (enabled: boolean) => void;
   dismiss: () => void;
   /** Must only run from a user gesture (Install button click). */
   promptInstall: () => Promise<"accepted" | "dismissed" | null>;
@@ -23,24 +26,32 @@ type InstallState = {
  *
  * Flow (Chrome / Edge):
  * 1. beforeinstallprompt → preventDefault() + store event (no auto prompt)
- * 2. Custom banner shows Install CTA
- * 3. User click → deferred.prompt() only
+ * 2. Custom banner shows Install CTA (only after captureEnabled)
+ * 3. User click → deferred.prompt() only — never on load
  */
 let listening = false;
+let pendingEvent: BeforeInstallPromptEvent | null = null;
 
-function attachInstallListener(
-  setDeferred: (e: BeforeInstallPromptEvent) => void,
-) {
+function attachInstallListener() {
   if (typeof window === "undefined" || listening) return;
   listening = true;
 
   window.addEventListener("beforeinstallprompt", (event) => {
-    // Required so the browser does not show its mini-infobar; we own the UI.
+    // Required to take ownership of the install UX (suppresses Chrome mini-infobar).
     event.preventDefault();
-    setDeferred(event as BeforeInstallPromptEvent);
+    const bip = event as BeforeInstallPromptEvent;
+    const { captureEnabled, setDeferred } = useInstallPromptStore.getState();
+    if (captureEnabled) {
+      setDeferred(bip);
+      pendingEvent = null;
+    } else {
+      // Banner not mounted yet — hold until enableCapture() runs.
+      pendingEvent = bip;
+    }
   });
 
   window.addEventListener("appinstalled", () => {
+    pendingEvent = null;
     useInstallPromptStore.getState().setDeferred(null);
   });
 }
@@ -49,6 +60,7 @@ export const useInstallPromptStore = create<InstallState>((set, get) => ({
   deferred: null,
   dismissed: false,
   outcome: null,
+  captureEnabled: false,
 
   setDeferred: (event) =>
     set((state) => {
@@ -59,12 +71,25 @@ export const useInstallPromptStore = create<InstallState>((set, get) => ({
       };
     }),
 
-  dismiss: () => set({ dismissed: true }),
+  setCaptureEnabled: (enabled) => {
+    set({ captureEnabled: enabled });
+    if (enabled && pendingEvent) {
+      const event = pendingEvent;
+      pendingEvent = null;
+      get().setDeferred(event);
+    }
+  },
+
+  dismiss: () => {
+    pendingEvent = null;
+    set({ dismissed: true, deferred: null });
+  },
 
   promptInstall: async () => {
     const event = get().deferred;
     if (!event?.prompt) return null;
     try {
+      // Only reachable from the Install button's onClick user gesture.
       await event.prompt();
       const choice = await event.userChoice;
       set({
@@ -74,15 +99,22 @@ export const useInstallPromptStore = create<InstallState>((set, get) => ({
       });
       return choice.outcome;
     } catch {
-      // User dismissed OS sheet or prompt unavailable — clear stale event.
       set({ deferred: null });
       return null;
     }
   },
 }));
 
+/** Attach the window listener once (idempotent). Does not enable capture. */
 export function initInstallPromptListener(): void {
-  attachInstallListener((event) => {
-    useInstallPromptStore.getState().setDeferred(event);
-  });
+  attachInstallListener();
+}
+
+/**
+ * Call from the custom install banner after mount so preventDefault + UI
+ * are paired — Chrome then has a visible Install CTA instead of a dead capture.
+ */
+export function enableInstallPromptCapture(): void {
+  attachInstallListener();
+  useInstallPromptStore.getState().setCaptureEnabled(true);
 }

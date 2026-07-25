@@ -3,15 +3,16 @@
 import { useEffect } from "react";
 import { Download, X } from "lucide-react";
 import {
-  initInstallPromptListener,
+  enableInstallPromptCapture,
   useInstallPromptStore,
 } from "@/stores/install-prompt-store";
 import { Button } from "@/components/ui/button";
 
 /**
- * Premium PWA install CTA.
- * beforeinstallprompt is captured in the store with preventDefault().
- * prompt() runs only when the user taps Install — never automatically.
+ * Premium PWA install CTA — loaded with `dynamic(..., { ssr: false })`.
+ * beforeinstallprompt is captured only after this banner mounts so Chrome
+ * always has a visible custom Install button (no orphaned preventDefault).
+ * prompt() runs only from the Install button click — never on load.
  */
 export function PwaInstallBanner() {
   const deferred = useInstallPromptStore((s) => s.deferred);
@@ -20,18 +21,21 @@ export function PwaInstallBanner() {
   const promptInstall = useInstallPromptStore((s) => s.promptInstall);
 
   useEffect(() => {
-    initInstallPromptListener();
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       ("standalone" in navigator &&
         Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+
     if (standalone) {
       useInstallPromptStore.getState().setDeferred(null);
+      return;
     }
+
+    enableInstallPromptCapture();
+
+    return () => {
+      useInstallPromptStore.getState().setCaptureEnabled(false);
+    };
   }, []);
 
   if (!deferred || dismissed) return null;

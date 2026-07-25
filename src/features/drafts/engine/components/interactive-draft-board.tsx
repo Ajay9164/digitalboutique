@@ -254,7 +254,7 @@ function InteractiveDraftBoardInner(
 
       <div
         ref={containerRef}
-        className="overflow-hidden rounded-3xl border border-white/40 bg-[#F4F1EA] shadow-[0_18px_50px_-24px_rgba(15,23,28,0.35)] dark:border-white/10 dark:bg-zinc-900"
+        className="overflow-hidden rounded-3xl border border-white/25 bg-card/90 shadow-[0_18px_50px_-24px_rgba(15,23,28,0.35)] dark:border-white/10 dark:bg-card/70"
         onMouseDown={(event) => {
           if (event.button === 1 || event.shiftKey) {
             setIsPanning(true);
@@ -301,7 +301,7 @@ function InteractiveDraftBoardInner(
               y={0}
               width={g.paper.width}
               height={g.paper.height}
-              fill="#F7F4EE"
+              fill="#EEF4F3"
               listening={false}
             />
             {gridLines}

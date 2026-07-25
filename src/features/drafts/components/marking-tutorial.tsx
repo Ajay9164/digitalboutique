@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import {
   Calculator,
   CheckCircle2,
@@ -165,7 +166,7 @@ export function MarkingTutorial({
                       <p className="text-sm font-semibold tracking-tight">
                         {item.title.replace(/^\d+\.\s*/, "")}
                       </p>
-                      <p className="mt-0.5 font-mono text-[11px] font-medium text-primary/90">
+                      <p className="mt-0.5 font-mono text-[11px] font-semibold text-foreground">
                         {item.formula}
                       </p>
                     </div>
@@ -201,10 +202,10 @@ export function MarkingTutorial({
                   <Calculator className="size-3.5" aria-hidden />
                   The chalk math
                 </h4>
-                <p className="font-mono text-sm font-semibold text-foreground">
+                <p className="font-mono text-sm font-semibold tracking-tight text-foreground">
                   {current.formula}
                 </p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-sm leading-relaxed text-foreground/80">
                   {current.mathExplainer}
                 </p>
               </section>

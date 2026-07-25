@@ -94,7 +94,7 @@ export function ProjectViewer({
                 <img
                   src={project.draftImage}
                   alt="Draft"
-                  className="aspect-[4/3] w-full object-cover bg-[#F4F1EA]"
+                  className="aspect-[4/3] w-full bg-muted object-cover"
                 />
                 <figcaption className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Draft image

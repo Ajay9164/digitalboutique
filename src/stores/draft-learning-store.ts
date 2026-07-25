@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { db, DRAFT_LEARNING_ID } from "@/lib/db";
+import { quietDbWrite } from "@/lib/db/safe";
 import {
   CONSTRUCTION_STEPS,
   CONSTRUCTION_STEP_MAP,
@@ -66,21 +67,24 @@ async function persist(partial: {
   practiceBestScore?: number;
   lastScore?: number | null;
 }) {
-  const existing = await db.draftLearning.get(DRAFT_LEARNING_ID);
-  await db.draftLearning.put({
-    id: DRAFT_LEARNING_ID,
-    completedSteps: partial.completedSteps ?? existing?.completedSteps ?? [],
-    lessonMaxStep: partial.lessonMaxStep ?? existing?.lessonMaxStep ?? 0,
-    practiceAttempts: partial.practiceAttempts ?? existing?.practiceAttempts ?? 0,
-    practiceCompletions:
-      partial.practiceCompletions ?? existing?.practiceCompletions ?? 0,
-    practiceBestScore:
-      partial.practiceBestScore ?? existing?.practiceBestScore ?? 0,
-    lastScore:
-      partial.lastScore !== undefined
-        ? partial.lastScore
-        : (existing?.lastScore ?? null),
-    updatedAt: new Date(),
+  quietDbWrite(async () => {
+    const existing = await db.draftLearning.get(DRAFT_LEARNING_ID);
+    await db.draftLearning.put({
+      id: DRAFT_LEARNING_ID,
+      completedSteps: partial.completedSteps ?? existing?.completedSteps ?? [],
+      lessonMaxStep: partial.lessonMaxStep ?? existing?.lessonMaxStep ?? 0,
+      practiceAttempts:
+        partial.practiceAttempts ?? existing?.practiceAttempts ?? 0,
+      practiceCompletions:
+        partial.practiceCompletions ?? existing?.practiceCompletions ?? 0,
+      practiceBestScore:
+        partial.practiceBestScore ?? existing?.practiceBestScore ?? 0,
+      lastScore:
+        partial.lastScore !== undefined
+          ? partial.lastScore
+          : (existing?.lastScore ?? null),
+      updatedAt: new Date(),
+    });
   });
 }
 
@@ -105,25 +109,29 @@ export const useDraftLearningStore = create<DraftLearningState>((set, get) => ({
 
   hydrate: async () => {
     if (get().hydrated) return;
-    const record = await db.draftLearning.get(DRAFT_LEARNING_ID);
-    const body = generateRandomBody();
-    const inputs = generateRandomInputs();
-    set({
-      hydrated: true,
-      completedSteps: (record?.completedSteps ?? []) as ConstructionStepId[],
-      lessonMaxStep: record?.lessonMaxStep ?? 0,
-      stepIndex: Math.min(record?.lessonMaxStep ?? 0, CONSTRUCTION_STEPS.length - 1),
-      practiceAttempts: record?.practiceAttempts ?? 0,
-      practiceCompletions: record?.practiceCompletions ?? 0,
-      practiceBestScore: record?.practiceBestScore ?? 0,
-      lastScore: record?.lastScore ?? null,
-      practiceBody: body,
-      practiceInputs: inputs,
-      practiceGuesses: {},
-      practiceAnswers: null,
-      practiceChecked: false,
-      practiceFieldResults: {},
-    });
+    try {
+      const record = await db.draftLearning.get(DRAFT_LEARNING_ID);
+      const body = generateRandomBody();
+      const inputs = generateRandomInputs();
+      set({
+        hydrated: true,
+        completedSteps: (record?.completedSteps ?? []) as ConstructionStepId[],
+        lessonMaxStep: record?.lessonMaxStep ?? 0,
+        stepIndex: Math.min(record?.lessonMaxStep ?? 0, CONSTRUCTION_STEPS.length - 1),
+        practiceAttempts: record?.practiceAttempts ?? 0,
+        practiceCompletions: record?.practiceCompletions ?? 0,
+        practiceBestScore: record?.practiceBestScore ?? 0,
+        lastScore: record?.lastScore ?? null,
+        practiceBody: body,
+        practiceInputs: inputs,
+        practiceGuesses: {},
+        practiceAnswers: null,
+        practiceChecked: false,
+        practiceFieldResults: {},
+      });
+    } catch {
+      set({ hydrated: true });
+    }
   },
 
   setMode: (mode) => set({ mode }),

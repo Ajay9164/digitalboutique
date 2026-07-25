@@ -11,7 +11,7 @@ export function formatRelativeLabel(date: Date, now = new Date()): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
 
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });

@@ -3,8 +3,10 @@ import {
   cameraErrorMessage,
   freezeVideoFrame,
   isCameraSupported,
+  stopStream,
 } from "@/features/studio/lib/camera";
 import { capitalize, formatRelativeLabel } from "@/utils/format";
+import { isQuotaExceededError } from "@/lib/db/safe";
 
 describe("camera helpers", () => {
   it("reports unsupported when mediaDevices is missing", () => {
@@ -28,6 +30,16 @@ describe("camera helpers", () => {
   it("maps missing devices", () => {
     const error = new DOMException("Missing", "NotFoundError");
     expect(cameraErrorMessage(error)).toMatch(/no camera/i);
+  });
+
+  it("stops every media track on a stream", () => {
+    const stop = vi.fn();
+    const stream = {
+      getTracks: () => [{ stop }, { stop }],
+    } as unknown as MediaStream;
+    stopStream(stream);
+    expect(stop).toHaveBeenCalledTimes(2);
+    stopStream(null);
   });
 
   it("rejects freeze when video has no dimensions", () => {
@@ -73,6 +85,18 @@ describe("camera helpers", () => {
     expect(drawImage).toHaveBeenCalled();
 
     vi.unstubAllGlobals();
+  });
+});
+
+describe("IndexedDB quota helpers", () => {
+  it("detects QuotaExceededError by name", () => {
+    expect(
+      isQuotaExceededError(new DOMException("quota", "QuotaExceededError")),
+    ).toBe(true);
+  });
+
+  it("ignores unrelated errors", () => {
+    expect(isQuotaExceededError(new Error("network"))).toBe(false);
   });
 });
 

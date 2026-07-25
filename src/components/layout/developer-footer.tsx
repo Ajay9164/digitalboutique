@@ -1,10 +1,12 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 
 /**
  * Minimal creator signature — sits above the floating bottom nav.
+ * Exact credit copy (uppercase) per production polish brief.
  */
 export function DeveloperFooter() {
   const reduceMotion = useReducedMotion();
@@ -14,7 +16,7 @@ export function DeveloperFooter() {
       className="pointer-events-none fixed inset-x-0 bottom-[calc(4.85rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4"
       aria-label="Developer credit"
     >
-      <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-background/40 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground backdrop-blur-md dark:border-white/10">
+      <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-background/40 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground backdrop-blur-md dark:border-white/10">
         <motion.span
           className="relative flex size-1.5 items-center justify-center"
           aria-hidden
@@ -35,9 +37,9 @@ export function DeveloperFooter() {
           <span className="absolute inset-0 rounded-full bg-primary/40 blur-[3px]" />
           <span className="relative size-1.5 rounded-full bg-primary" />
         </motion.span>
-        <span>Developed by Ajay T only</span>
+        <span>DEVELOPED BY AJAY T ONLY</span>
         <Sparkles className="size-2.5 text-primary/70" aria-hidden />
-      </p>
+      </div>
     </footer>
   );
 }

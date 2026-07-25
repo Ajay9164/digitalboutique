@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Hand, RotateCcw, Sparkles } from "lucide-react";
 import { useMeasurementStore } from "@/stores/measurement-store";
@@ -8,6 +8,7 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "tailor-measurements-tour-v2";
+const TOUR_DONE_EVENT = "tailor-tour-done";
 
 const TIPS = [
   {
@@ -26,8 +27,7 @@ const TIPS = [
   },
 ] as const;
 
-function readDone(): boolean {
-  if (typeof window === "undefined") return true;
+function readTourDone(): boolean {
   try {
     return window.localStorage.getItem(STORAGE_KEY) === "1";
   } catch {
@@ -35,28 +35,48 @@ function readDone(): boolean {
   }
 }
 
+function subscribeTourDone(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY || event.key === null) onStoreChange();
+  };
+  window.addEventListener("storage", onStorage);
+  window.addEventListener(TOUR_DONE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(TOUR_DONE_EVENT, onStoreChange);
+  };
+}
+
 /**
  * First-visit guided tour for the Measurements masterclass.
+ * localStorage via useSyncExternalStore: server snapshot = hidden (done),
+ * so hydration never mismatches (React #418).
  */
 export function MeasurementMasterclassTour() {
   const reduceMotion = useReducedMotion();
   const selectedId = useMeasurementStore((s) => s.selectedId);
-  const [done, setDone] = useState(readDone);
   const [tipIndex, setTipIndex] = useState(0);
 
-  const visible = !done && !selectedId;
-  const tip = TIPS[tipIndex] ?? TIPS[0];
-  const Icon = tip.icon;
-  const isLast = tipIndex >= TIPS.length - 1;
+  const done = useSyncExternalStore(
+    subscribeTourDone,
+    readTourDone,
+    () => true,
+  );
 
-  function finish() {
-    setDone(true);
+  const finish = useCallback(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // private mode
     }
-  }
+    window.dispatchEvent(new Event(TOUR_DONE_EVENT));
+  }, []);
+
+  const visible = !done && !selectedId;
+  const tip = TIPS[tipIndex] ?? TIPS[0];
+  const Icon = tip.icon;
+  const isLast = tipIndex >= TIPS.length - 1;
 
   function advance() {
     if (isLast) finish();

@@ -152,7 +152,7 @@ export function MeasurementsView() {
               title="3D mannequin failed"
               description="WebGL may be unavailable. Retry or use the region chips below."
             >
-              <InteractiveMannequin className="touch-none" />
+              <InteractiveMannequin className="absolute inset-0 touch-none" />
             </FeatureErrorBoundary>
           </div>
           <p className="border-t border-white/15 px-4 py-3 text-center text-[11px] text-muted-foreground">

@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ContactShadows,
   Environment,
@@ -394,6 +394,24 @@ export type InteractiveMannequinProps = {
   className?: string;
 };
 
+function WebGLContextGuard({ onContextLost }: { onContextLost: () => void }) {
+  const gl = useThree((s) => s.gl);
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const handleLost = (event: Event) => {
+      event.preventDefault();
+      onContextLost();
+    };
+    canvas.addEventListener("webglcontextlost", handleLost, false);
+    return () => {
+      canvas.removeEventListener("webglcontextlost", handleLost, false);
+    };
+  }, [gl, onContextLost]);
+
+  return null;
+}
+
 function MannequinCanvas({
   onContextLost,
 }: {
@@ -421,16 +439,10 @@ function MannequinCanvas({
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.0;
         gl.outputColorSpace = THREE.SRGBColorSpace;
-
-        const canvas = gl.domElement;
-        const handleLost = (event: Event) => {
-          event.preventDefault();
-          onContextLost();
-        };
-        canvas.addEventListener("webglcontextlost", handleLost, false);
       }}
       onPointerMissed={() => select(null)}
     >
+      <WebGLContextGuard onContextLost={onContextLost} />
       <StudioLighting />
       <Suspense fallback={null}>
         <Environment preset="apartment" environmentIntensity={0.35} />
@@ -468,11 +480,12 @@ export default function InteractiveMannequin({
   className,
 }: InteractiveMannequinProps) {
   const [use2D, setUse2D] = useState(false);
+  const onContextLost = useCallback(() => setUse2D(true), []);
 
   return (
     <div
       className={cn(
-        "absolute inset-0 h-full min-h-[400px] w-full overflow-hidden",
+        "relative h-full min-h-[400px] w-full overflow-hidden",
         className,
       )}
       role="img"
@@ -482,7 +495,9 @@ export default function InteractiveMannequin({
         <Mannequin2DFallback message="3D View Unavailable — Using 2D Mode" />
       ) : (
         <MannequinWebGLBoundary>
-          <MannequinCanvas onContextLost={() => setUse2D(true)} />
+          <div className="relative h-full min-h-[400px] w-full">
+            <MannequinCanvas onContextLost={onContextLost} />
+          </div>
         </MannequinWebGLBoundary>
       )}
     </div>

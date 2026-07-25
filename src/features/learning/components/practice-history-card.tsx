@@ -39,7 +39,7 @@ export function PracticeHistoryCard() {
                   ) : null}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {new Date(row.createdAt).toLocaleString(undefined, {
+                  {new Date(row.createdAt).toLocaleString("en-US", {
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",

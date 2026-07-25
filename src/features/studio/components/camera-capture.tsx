@@ -16,6 +16,7 @@ import {
   captureVideoFrame,
   getCameraPermission,
   isCameraSupported,
+  releaseVideoStream,
   requestCameraStream,
   stopStream,
   type CameraPermission,
@@ -23,15 +24,6 @@ import {
 import { useStudioStore } from "@/stores/studio-store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-function logCapture(stage: string, detail?: unknown) {
-  if (process.env.NODE_ENV !== "development") return;
-  if (detail === undefined) {
-    console.info(`[Capture] ${stage}`);
-    return;
-  }
-  console.info(`[Capture] ${stage}`, detail);
-}
 
 export function CameraCapture({ className }: { className?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -57,9 +49,20 @@ export function CameraCapture({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    return () => {
+    const release = () => {
       stopStream(streamRef.current);
       streamRef.current = null;
+      releaseVideoStream(videoRef.current);
+      setLive(false);
+    };
+
+    // pagehide covers iOS Safari bfcache / tab discard; effect cleanup covers route leave.
+    const onPageHide = () => release();
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      release();
     };
   }, []);
 
@@ -84,7 +87,6 @@ export function CameraCapture({ className }: { className?: string }) {
 
   const startCamera = useCallback(
     async (nextFacing: "environment" | "user" = facing) => {
-      logCapture("Enable camera clicked", { facing: nextFacing });
       if (!isCameraSupported()) {
         setPermission("unsupported");
         setCameraError("Camera API is not available in this browser.");
@@ -101,7 +103,6 @@ export function CameraCapture({ className }: { className?: string }) {
 
         const stream = await requestCameraStream(nextFacing);
         streamRef.current = stream;
-        logCapture("MediaStream acquired");
 
         const video = videoRef.current;
         if (!video) {
@@ -109,18 +110,14 @@ export function CameraCapture({ className }: { className?: string }) {
         }
 
         await attachStreamToVideo(video, stream);
-        logCapture("Video preview ready", {
-          width: video.videoWidth,
-          height: video.videoHeight,
-        });
         setLive(true);
         setPermission("granted");
         setCapturePreview(null);
         setStatusMessage("Camera ready — point at fabric and capture.");
       } catch (error) {
-        logCapture("Enable camera failed", error);
         stopStream(streamRef.current);
         streamRef.current = null;
+        releaseVideoStream(videoRef.current);
         setLive(false);
         setCameraError(cameraErrorMessage(error));
         const status = await refreshPermission();
@@ -135,23 +132,19 @@ export function CameraCapture({ className }: { className?: string }) {
   );
 
   const handleCapture = async () => {
-    logCapture("Button clicked");
     const video = videoRef.current;
 
     // Never swallow clicks: Button uses pointer-events-none when disabled,
     // so we keep Capture clickable and explain when the camera is not live.
     if (!video) {
       setCameraError("Camera preview is unavailable. Enable the camera again.");
-      logCapture("Stopped — missing video element");
       return;
     }
     if (!live || !streamRef.current) {
       setCameraError("Enable the camera first, then tap Capture image.");
-      logCapture("Stopped — camera not live");
       return;
     }
     if (capturing || saving || starting) {
-      logCapture("Stopped — busy");
       return;
     }
 
@@ -160,26 +153,14 @@ export function CameraCapture({ className }: { className?: string }) {
     setStatusMessage(null);
 
     try {
-      logCapture("Capturing frame…", {
-        readyState: video.readyState,
-        width: video.videoWidth,
-        height: video.videoHeight,
-      });
       const frozen = await captureVideoFrame(video);
-      logCapture("Image generated", {
-        width: frozen.width,
-        height: frozen.height,
-        bytes: frozen.dataUrl.length,
-      });
-
       setCapturePreview(frozen);
       stopStream(streamRef.current);
       streamRef.current = null;
+      releaseVideoStream(video);
       setLive(false);
       setStatusMessage("Frame captured — review it, then save.");
-      logCapture("UI updated with preview");
     } catch (error) {
-      logCapture("Capture failed", error);
       setCameraError(
         error instanceof Error ? error.message : "Failed to capture image.",
       );
@@ -196,7 +177,6 @@ export function CameraCapture({ className }: { className?: string }) {
   };
 
   const handleSave = async () => {
-    logCapture("Save clicked");
     if (!capturePreview) {
       setCameraError("Nothing to save. Capture an image first.");
       return;
@@ -207,17 +187,13 @@ export function CameraCapture({ className }: { className?: string }) {
     setStatusMessage(null);
 
     try {
-      logCapture("Saving to IndexedDB…");
       const saved = await saveCapture();
       if (!saved) {
         setCameraError("Save failed — no capture was available.");
-        logCapture("Save returned null");
         return;
       }
       setStatusMessage("Fabric photo saved on this device.");
-      logCapture("Save complete", { id: saved.id });
     } catch (error) {
-      logCapture("Save failed", error);
       setCameraError(
         error instanceof Error
           ? error.message

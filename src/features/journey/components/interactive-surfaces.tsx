@@ -390,25 +390,39 @@ type MeasureCard =
   | { kind: "identify"; prompt: string; answerId: string; options: string[] }
   | { kind: "method"; prompt: string; correct: boolean };
 
-function buildMeasureCards(difficulty: "easy" | "hard"): MeasureCard[] {
+function mulberry32(seed: number) {
+  let a = seed >>> 0;
+  return () => {
+    a += 0x6d2b79f5;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function buildMeasureCards(
+  difficulty: "easy" | "hard",
+  random: () => number = Math.random,
+): MeasureCard[] {
   const pool = MEASUREMENTS.slice(0, difficulty === "easy" ? 12 : 20);
   const cards: MeasureCard[] = [];
   for (let i = 0; i < (difficulty === "easy" ? 5 : 6); i += 1) {
     if (i % 2 === 0) {
-      const target = pool[Math.floor(Math.random() * pool.length)];
+      const target = pool[Math.floor(random() * pool.length)];
       const distractors = pool
         .filter((m) => m.id !== target.id)
-        .sort(() => Math.random() - 0.5)
+        .sort(() => random() - 0.5)
         .slice(0, 3)
         .map((m) => m.id);
       cards.push({
         kind: "identify",
         prompt: target.definition,
         answerId: target.id,
-        options: [target.id, ...distractors].sort(() => Math.random() - 0.5),
+        options: [target.id, ...distractors].sort(() => random() - 0.5),
       });
     } else {
-      const good = Math.random() > 0.45;
+      const good = random() > 0.45;
       cards.push({
         kind: "method",
         prompt: good
@@ -428,39 +442,16 @@ export function MeasurePracticeSurface({
   difficulty?: "easy" | "hard";
   onScored?: (score: number, total: number) => void;
 }) {
-  // Client-only random deck: keep SSR/client first paint identical (null),
-  // then adjust during render after mount (avoids hydration mismatch + effect loops).
-  const [deck, setDeck] = useState<{
-    difficulty: "easy" | "hard";
-    cards: MeasureCard[];
-  } | null>(null);
+  // Seeded cards are referentially stable across SSR/client for a given difficulty.
+  const [cards, setCards] = useState(() =>
+    buildMeasureCards(difficulty, mulberry32(difficulty === "hard" ? 91 : 17)),
+  );
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [hint, setHint] = useState(false);
   const [done, setDone] = useState(false);
 
-  if (
-    typeof window !== "undefined" &&
-    (deck === null || deck.difficulty !== difficulty)
-  ) {
-    setDeck({ difficulty, cards: buildMeasureCards(difficulty) });
-    setIndex(0);
-    setScore(0);
-    setFeedback(null);
-    setHint(false);
-    setDone(false);
-  }
-
-  if (!deck) {
-    return (
-      <SurfaceShell title="Practice">
-        <p className="text-sm text-muted-foreground">Preparing cards…</p>
-      </SurfaceShell>
-    );
-  }
-
-  const cards = deck.cards;
   const card = cards[index];
   const labelFor = (id: string) =>
     MEASUREMENTS.find((m) => m.id === id)?.label ?? id;
@@ -494,7 +485,12 @@ export function MeasurePracticeSurface({
             variant="outline"
             className="rounded-xl"
             onClick={() => {
-              setDeck({ difficulty, cards: buildMeasureCards(difficulty) });
+              setCards(
+                buildMeasureCards(
+                  difficulty,
+                  mulberry32(Date.now() % 1_000_000),
+                ),
+              );
               setIndex(0);
               setScore(0);
               setDone(false);
@@ -669,22 +665,11 @@ export function DraftPracticeSurface({
   targetScore?: number;
   onScored?: (score: number, total: number) => void;
 }) {
-  const [session, setSession] = useState<{
-    body: ReturnType<typeof generateRandomBody>;
-    inputs: ReturnType<typeof generateRandomInputs>;
-  } | null>(null);
-
-  if (typeof window !== "undefined" && session === null) {
-    setSession({
-      body: generateRandomBody(),
-      inputs: generateRandomInputs(),
-    });
-  }
-
-  const body = session?.body ?? null;
-  const inputs = session?.inputs ?? null;
+  // Stable initial session (no setState-during-render; SSR/client match via seed).
+  const [body] = useState(() => generateRandomBody());
+  const [inputs] = useState(() => generateRandomInputs());
   const answers = useMemo(
-    () => (body && inputs ? getCorrectAnswers(body, inputs) : null),
+    () => getCorrectAnswers(body, inputs),
     [body, inputs],
   );
   const [guesses, setGuesses] = useState<PracticeGuesses>({});
@@ -701,14 +686,6 @@ export function DraftPracticeSurface({
     setHintsLeft((h) => h - 1);
     setRevealed((prev) => ({ ...prev, [id]: true }));
   };
-
-  if (!body || !inputs || !answers) {
-    return (
-      <SurfaceShell title="Practice · Drafting">
-        <p className="text-sm text-muted-foreground">Preparing practice…</p>
-      </SurfaceShell>
-    );
-  }
 
   return (
     <SurfaceShell title="Practice · Drafting">

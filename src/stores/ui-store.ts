@@ -9,7 +9,11 @@ type UiState = {
 
 export const useUiStore = create<UiState>((set) => ({
   isNavVisible: true,
-  setNavVisible: (visible) => set({ isNavVisible: visible }),
+  setNavVisible: (visible) =>
+    set((state) =>
+      state.isNavVisible === visible ? state : { isNavVisible: visible },
+    ),
   pageTitle: null,
-  setPageTitle: (title) => set({ pageTitle: title }),
+  setPageTitle: (title) =>
+    set((state) => (state.pageTitle === title ? state : { pageTitle: title })),
 }));

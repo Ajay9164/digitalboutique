@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { ACHIEVEMENTS } from "@/features/learning/data/catalog";
 import { DashboardCard } from "@/features/learning/components/dashboard-card";
 import { useLearningHubStore } from "@/stores/learning-hub-store";
+import { EMPTY_ARRAY } from "@/lib/empty";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -33,7 +34,7 @@ const ICONS = {
 
 export function AchievementsGrid() {
   const unlocked = useLearningHubStore(
-    (s) => s.snapshot?.unlockedAchievementIds ?? [],
+    (s) => s.snapshot?.unlockedAchievementIds ?? (EMPTY_ARRAY as string[]),
   );
   const unlockedSet = new Set(unlocked);
 

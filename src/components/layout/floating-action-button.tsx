@@ -7,7 +7,10 @@ import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 
 export function FloatingActionButton() {
-  const { isVisible, label, ariaLabel, onPress } = useFabStore();
+  const isVisible = useFabStore((state) => state.isVisible);
+  const label = useFabStore((state) => state.label);
+  const ariaLabel = useFabStore((state) => state.ariaLabel);
+  const onPress = useFabStore((state) => state.onPress);
   const reduceMotion = useReducedMotion();
 
   return (

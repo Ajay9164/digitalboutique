@@ -7,11 +7,7 @@ type FabState = {
   label: string;
   ariaLabel: string;
   onPress: FabHandler;
-  showFab: (options?: {
-    label?: string;
-    ariaLabel?: string;
-    onPress?: FabHandler;
-  }) => void;
+  showFab: (options?: { label?: string; ariaLabel?: string }) => void;
   hideFab: () => void;
   setFabHandler: (handler: FabHandler) => void;
 };
@@ -25,14 +21,11 @@ export const useFabStore = create<FabState>((set) => ({
     set((state) => {
       const label = options.label ?? state.label;
       const ariaLabel = options.ariaLabel ?? options.label ?? state.ariaLabel;
-      const onPress =
-        options.onPress !== undefined ? options.onPress : state.onPress;
 
       if (
         state.isVisible &&
         state.label === label &&
-        state.ariaLabel === ariaLabel &&
-        state.onPress === onPress
+        state.ariaLabel === ariaLabel
       ) {
         return state;
       }
@@ -41,7 +34,6 @@ export const useFabStore = create<FabState>((set) => ({
         isVisible: true,
         label,
         ariaLabel,
-        onPress,
       };
     }),
   hideFab: () =>

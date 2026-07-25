@@ -4,9 +4,14 @@ import { History } from "lucide-react";
 import { DashboardCard } from "@/features/learning/components/dashboard-card";
 import { useLearningHubStore } from "@/stores/learning-hub-store";
 import { formatRelativeLabel } from "@/utils/format";
+import { EMPTY_ARRAY } from "@/lib/empty";
+import type { LearningActivityRecord } from "@/lib/db";
 
 export function LearningTimeline() {
-  const activities = useLearningHubStore((s) => s.snapshot?.activities ?? []);
+  const activities = useLearningHubStore(
+    (s) =>
+      s.snapshot?.activities ?? (EMPTY_ARRAY as LearningActivityRecord[]),
+  );
 
   return (
     <DashboardCard

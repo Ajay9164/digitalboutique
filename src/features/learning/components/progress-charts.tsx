@@ -14,11 +14,18 @@ import {
 import { useLearningHubStore } from "@/stores/learning-hub-store";
 import { DashboardCard } from "@/features/learning/components/dashboard-card";
 import { ChartColumn, TrendingUp } from "lucide-react";
+import { EMPTY_ARRAY } from "@/lib/empty";
+import type { PracticeHistoryRecord } from "@/lib/db";
+
+type WeeklyPoint = { day: string; xp: number; practices: number };
 
 export function ProgressCharts() {
-  const chartWeekly = useLearningHubStore((s) => s.snapshot?.chartWeekly ?? []);
+  const chartWeekly = useLearningHubStore(
+    (s) => s.snapshot?.chartWeekly ?? (EMPTY_ARRAY as WeeklyPoint[]),
+  );
   const practiceHistory = useLearningHubStore(
-    (s) => s.snapshot?.practiceHistory ?? [],
+    (s) =>
+      s.snapshot?.practiceHistory ?? (EMPTY_ARRAY as PracticeHistoryRecord[]),
   );
 
   const practiceChart = [...practiceHistory]

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, Plus } from "lucide-react";
 import { JournalToolbar } from "@/features/journal/components/journal-toolbar";
@@ -14,11 +14,8 @@ import { JourneyGuideBanner } from "@/features/journey/components/journey-guide-
 import { Button } from "@/components/ui/button";
 import { usePageFab } from "@/hooks/use-page-fab";
 import { useUiStore } from "@/stores/ui-store";
-import {
-  selectActiveProject,
-  selectVisibleProjects,
-  useJournalStore,
-} from "@/stores/journal-store";
+import { filterAndSortProjects } from "@/features/journal/lib/project";
+import { useJournalStore } from "@/stores/journal-store";
 
 function JournalFab() {
   const openCreate = useJournalStore((s) => s.openCreate);
@@ -35,8 +32,19 @@ export function JournalView() {
   const retryStorage = useJournalStore((s) => s.retryStorage);
   const view = useJournalStore((s) => s.view);
   const projects = useJournalStore((s) => s.projects);
-  const visible = useJournalStore(selectVisibleProjects);
-  const active = useJournalStore(selectActiveProject);
+  const filter = useJournalStore((s) => s.filter);
+  const sort = useJournalStore((s) => s.sort);
+  // Derive outside the Zustand selector — React 19 getSnapshot must be
+  // referentially stable when the store is unchanged (Error #185).
+  const visible = useMemo(
+    () => filterAndSortProjects(projects, filter, sort),
+    [projects, filter, sort],
+  );
+  const activeId = useJournalStore((s) => s.activeId);
+  const active = useMemo(
+    () => projects.find((project) => project.id === activeId) ?? null,
+    [projects, activeId],
+  );
   const openCreate = useJournalStore((s) => s.openCreate);
   const openViewer = useJournalStore((s) => s.openViewer);
   const openEdit = useJournalStore((s) => s.openEdit);

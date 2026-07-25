@@ -3,9 +3,14 @@
 import { ClipboardList } from "lucide-react";
 import { DashboardCard } from "@/features/learning/components/dashboard-card";
 import { useLearningHubStore } from "@/stores/learning-hub-store";
+import { EMPTY_ARRAY } from "@/lib/empty";
+import type { PracticeHistoryRecord } from "@/lib/db";
 
 export function PracticeHistoryCard() {
-  const history = useLearningHubStore((s) => s.snapshot?.practiceHistory ?? []);
+  const history = useLearningHubStore(
+    (s) =>
+      s.snapshot?.practiceHistory ?? (EMPTY_ARRAY as PracticeHistoryRecord[]),
+  );
 
   return (
     <DashboardCard

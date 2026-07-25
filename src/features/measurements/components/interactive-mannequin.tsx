@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
@@ -19,12 +19,14 @@ import {
   REGION_ANCHORS,
   type RegionAnchor,
 } from "@/features/measurements/components/mannequin-regions";
+import { Mannequin2DFallback } from "@/features/measurements/components/mannequin-2d-fallback";
+import { MannequinWebGLBoundary } from "@/features/measurements/components/mannequin-webgl-boundary";
 import { useMeasurementStore } from "@/stores/measurement-store";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { cn } from "@/lib/utils";
 
 /** Soft matte-silk / marble dress-form palette */
 const FORM_COLOR = "#EDE6DC";
-const FORM_SHEEN = "#F7F2EA";
 const STAND_COLOR = "#2A2E34";
 const REGION_IDLE = "#6FA89E";
 const REGION_HOVER = "#4FB3A1";
@@ -37,24 +39,22 @@ const REGION_ACTIVE = "#2DD4BF";
 
 function SilkMaterial({
   color = FORM_COLOR,
-  roughness = 0.28,
-  metalness = 0.08,
+  roughness = 0.38,
+  metalness = 0.06,
 }: {
   color?: string;
   roughness?: number;
   metalness?: number;
 }) {
+  // Lighter PhysicalMaterial for integrated GPUs — silk look without sheen/high clearcoat.
   return (
     <meshPhysicalMaterial
       color={color}
       roughness={roughness}
       metalness={metalness}
-      clearcoat={1}
-      clearcoatRoughness={0.22}
-      sheen={0.45}
-      sheenRoughness={0.55}
-      sheenColor={FORM_SHEEN}
-      envMapIntensity={0.85}
+      clearcoat={0.55}
+      clearcoatRoughness={0.45}
+      envMapIntensity={0.45}
     />
   );
 }
@@ -79,7 +79,7 @@ function MannequinBody() {
     ];
     return new THREE.LatheGeometry(
       profile.map(([x, y]) => new THREE.Vector2(x, y)),
-      64,
+      48,
     );
   }, []);
 
@@ -97,19 +97,19 @@ function MannequinBody() {
 
       {[-0.09, 0.09].map((x) => (
         <mesh key={x} position={[x, 1.32, 0.1]} castShadow>
-          <sphereGeometry args={[0.075, 32, 32]} />
+          <sphereGeometry args={[0.075, 24, 24]} />
           <SilkMaterial />
         </mesh>
       ))}
 
       <mesh position={[0, 1.71, 0]} castShadow>
-        <sphereGeometry args={[0.05, 32, 32]} />
+        <sphereGeometry args={[0.05, 24, 24]} />
         <meshPhysicalMaterial
           color={STAND_COLOR}
-          roughness={0.35}
-          metalness={0.55}
-          clearcoat={0.6}
-          clearcoatRoughness={0.3}
+          roughness={0.4}
+          metalness={0.45}
+          clearcoat={0.35}
+          clearcoatRoughness={0.4}
         />
       </mesh>
 
@@ -120,28 +120,28 @@ function MannequinBody() {
           rotation={[0, 0, ARM_TILT * side]}
         >
           <mesh position={[0, -0.26, 0]} castShadow>
-            <capsuleGeometry args={[0.05, 0.42, 8, 32]} />
+            <capsuleGeometry args={[0.05, 0.42, 6, 16]} />
             <SilkMaterial />
           </mesh>
         </group>
       ))}
 
       <mesh position={[0, 0.35, 0]} castShadow>
-        <cylinderGeometry args={[0.015, 0.015, 0.62, 24]} />
+        <cylinderGeometry args={[0.015, 0.015, 0.62, 16]} />
         <meshPhysicalMaterial
           color={STAND_COLOR}
-          roughness={0.3}
-          metalness={0.65}
-          clearcoat={0.8}
+          roughness={0.4}
+          metalness={0.5}
+          clearcoat={0.3}
         />
       </mesh>
       <mesh position={[0, 0.025, 0]} receiveShadow>
-        <cylinderGeometry args={[0.23, 0.26, 0.05, 48]} />
+        <cylinderGeometry args={[0.23, 0.26, 0.05, 32]} />
         <meshPhysicalMaterial
           color={STAND_COLOR}
-          roughness={0.45}
-          metalness={0.4}
-          clearcoat={0.4}
+          roughness={0.5}
+          metalness={0.35}
+          clearcoat={0.25}
         />
       </mesh>
     </group>
@@ -376,23 +376,16 @@ function RegionOverlays({ reduceMotion }: { reduceMotion: boolean }) {
 function StudioLighting() {
   return (
     <>
-      <ambientLight intensity={0.35} />
-      <hemisphereLight color="#f5f1ea" groundColor="#2a3338" intensity={0.55} />
+      <ambientLight intensity={0.5} />
+      <hemisphereLight color="#f5f1ea" groundColor="#2a3338" intensity={0.45} />
       <directionalLight
         position={[2.4, 3.4, 2.2]}
-        intensity={1.35}
+        intensity={1.15}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[512, 512]}
         shadow-bias={-0.0002}
       />
-      <directionalLight position={[-2.2, 1.8, 1.4]} intensity={0.45} />
-      <spotLight
-        position={[-1.4, 3.0, -2.2]}
-        intensity={0.85}
-        angle={0.45}
-        penumbra={0.85}
-        color="#dff7f2"
-      />
+      <directionalLight position={[-2.2, 1.8, 1.4]} intensity={0.4} />
     </>
   );
 }
@@ -401,66 +394,97 @@ export type InteractiveMannequinProps = {
   className?: string;
 };
 
-export default function InteractiveMannequin({
-  className,
-}: InteractiveMannequinProps) {
+function MannequinCanvas({
+  onContextLost,
+}: {
+  onContextLost: () => void;
+}) {
   const select = useMeasurementStore((s) => s.select);
   const reduceMotion = useReducedMotion();
 
   return (
-    <div
-      className={className}
-      role="img"
-      aria-label="Interactive 3D mannequin. Tap a glowing region to open its measurement lesson."
+    <Canvas
+      className="absolute inset-0 h-full w-full touch-none"
+      shadows="percentage"
+      dpr={[1, 1.25]}
+      gl={{
+        antialias: true,
+        alpha: true,
+        powerPreference: "default",
+        preserveDrawingBuffer: true,
+        failIfMajorPerformanceCaveat: false,
+      }}
+      camera={{ position: [0.55, 1.48, 2.05], fov: 32, near: 0.1, far: 40 }}
+      onCreated={({ gl }) => {
+        gl.shadowMap.enabled = true;
+        gl.shadowMap.type = THREE.PCFShadowMap;
+        gl.toneMapping = THREE.ACESFilmicToneMapping;
+        gl.toneMappingExposure = 1.0;
+        gl.outputColorSpace = THREE.SRGBColorSpace;
+
+        const canvas = gl.domElement;
+        const handleLost = (event: Event) => {
+          event.preventDefault();
+          onContextLost();
+        };
+        canvas.addEventListener("webglcontextlost", handleLost, false);
+      }}
+      onPointerMissed={() => select(null)}
     >
-      <Canvas
-        shadows="percentage"
-        dpr={[1, 1.75]}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance",
-        }}
-        camera={{ position: [0.55, 1.48, 2.05], fov: 32, near: 0.1, far: 40 }}
-        onCreated={({ gl }) => {
-          gl.shadowMap.enabled = true;
-          gl.shadowMap.type = THREE.PCFShadowMap;
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.05;
-          gl.outputColorSpace = THREE.SRGBColorSpace;
-        }}
-        onPointerMissed={() => select(null)}
-      >
-        <StudioLighting />
-        <Suspense fallback={null}>
-          <Environment preset="studio" environmentIntensity={0.55} />
-        </Suspense>
-        <MannequinBody />
-        <RegionOverlays reduceMotion={reduceMotion} />
-        <ContactShadows
-          position={[0, 0.001, 0]}
-          resolution={1024}
-          scale={10}
-          blur={2}
-          opacity={0.5}
-          far={10}
-        />
-        <OrbitControls
-          makeDefault
-          enablePan
-          enableZoom
-          enableRotate
-          enableDamping
-          dampingFactor={0.08}
-          target={[0, 1.12, 0]}
-          minDistance={1.05}
-          maxDistance={3.1}
-          minPolarAngle={Math.PI * 0.28}
-          maxPolarAngle={Math.PI * 0.58}
-          minAzimuthAngle={-Math.PI * 0.85}
-          maxAzimuthAngle={Math.PI * 0.85}
-        />
-      </Canvas>
+      <StudioLighting />
+      <Suspense fallback={null}>
+        <Environment preset="apartment" environmentIntensity={0.35} />
+      </Suspense>
+      <MannequinBody />
+      <RegionOverlays reduceMotion={!!reduceMotion} />
+      <ContactShadows
+        position={[0, 0.001, 0]}
+        resolution={256}
+        scale={6}
+        blur={1.8}
+        opacity={0.4}
+        far={4}
+      />
+      <OrbitControls
+        makeDefault
+        enablePan
+        enableZoom
+        enableRotate
+        enableDamping
+        dampingFactor={0.08}
+        target={[0, 1.12, 0]}
+        minDistance={1.05}
+        maxDistance={3.1}
+        minPolarAngle={Math.PI * 0.28}
+        maxPolarAngle={Math.PI * 0.58}
+        minAzimuthAngle={-Math.PI * 0.85}
+        maxAzimuthAngle={Math.PI * 0.85}
+      />
+    </Canvas>
+  );
+}
+
+export default function InteractiveMannequin({
+  className,
+}: InteractiveMannequinProps) {
+  const [use2D, setUse2D] = useState(false);
+
+  return (
+    <div
+      className={cn(
+        "relative h-[50vh] min-h-[400px] w-full overflow-hidden",
+        className,
+      )}
+      role="img"
+      aria-label="Interactive mannequin. Tap a glowing region to open its measurement lesson."
+    >
+      {use2D ? (
+        <Mannequin2DFallback message="3D View Unavailable — Using 2D Mode" />
+      ) : (
+        <MannequinWebGLBoundary>
+          <MannequinCanvas onContextLost={() => setUse2D(true)} />
+        </MannequinWebGLBoundary>
+      )}
     </div>
   );
 }

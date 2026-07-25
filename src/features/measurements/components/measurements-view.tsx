@@ -20,7 +20,9 @@ const InteractiveMannequin = dynamic(
   {
     ssr: false,
     loading: () => (
-      <Skeleton className="h-[420px] w-full rounded-3xl sm:h-[480px]" />
+      <div className="relative h-[50vh] min-h-[400px] w-full">
+        <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
+      </div>
     ),
   },
 );
@@ -140,7 +142,7 @@ export function MeasurementsView() {
             title="3D mannequin failed"
             description="WebGL may be unavailable. Retry or use the region chips below."
           >
-            <InteractiveMannequin className="h-[420px] w-full touch-none sm:h-[480px]" />
+            <InteractiveMannequin className="touch-none" />
           </FeatureErrorBoundary>
           <p className="border-t border-border/50 px-4 py-2.5 text-center text-[11px] text-muted-foreground">
             Drag to rotate · Scroll to zoom · Glowing bands invite a tap

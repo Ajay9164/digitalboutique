@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   cameraErrorMessage,
+  freezeVideoFrame,
   isCameraSupported,
 } from "@/features/studio/lib/camera";
 import { capitalize, formatRelativeLabel } from "@/utils/format";
@@ -27,6 +28,51 @@ describe("camera helpers", () => {
   it("maps missing devices", () => {
     const error = new DOMException("Missing", "NotFoundError");
     expect(cameraErrorMessage(error)).toMatch(/no camera/i);
+  });
+
+  it("rejects freeze when video has no dimensions", () => {
+    const video = {
+      videoWidth: 0,
+      videoHeight: 0,
+      readyState: 2,
+    } as HTMLVideoElement;
+
+    expect(() => freezeVideoFrame(video)).toThrow(/not ready/i);
+  });
+
+  it("freezes a paintable video frame to a jpeg data URL", () => {
+    const drawImage = vi.fn();
+    const toDataURL = vi.fn(
+      () =>
+        `data:image/jpeg;base64,${"A".repeat(80)}`,
+    );
+    const getContext = vi.fn(() => ({ drawImage }));
+
+    vi.stubGlobal(
+      "document",
+      {
+        createElement: () => ({
+          width: 0,
+          height: 0,
+          getContext,
+          toDataURL,
+        }),
+      } as unknown as Document,
+    );
+
+    const video = {
+      videoWidth: 640,
+      videoHeight: 480,
+      readyState: 2, // HAVE_CURRENT_DATA
+    } as HTMLVideoElement;
+
+    const frame = freezeVideoFrame(video, { quality: 0.8, maxEdge: 320 });
+    expect(frame.width).toBe(320);
+    expect(frame.height).toBe(240);
+    expect(frame.dataUrl.startsWith("data:image/jpeg")).toBe(true);
+    expect(drawImage).toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
   });
 });
 

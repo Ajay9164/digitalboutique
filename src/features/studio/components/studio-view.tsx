@@ -41,7 +41,7 @@ export function StudioView() {
       <PageHeader
         eyebrow="Atelier"
         title="Studio"
-        description="Capture fabric, freeze the frame, and lay professional neckline patterns over your cloth."
+        description="Capture fabric under good light, save it on this device, then overlay neckline patterns."
       />
 
       {photos.length > 0 ? (

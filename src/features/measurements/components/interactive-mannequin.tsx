@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { ContactShadows, Line, OrbitControls } from "@react-three/drei";
@@ -50,6 +50,12 @@ function MannequinBody() {
       48,
     );
   }, []);
+
+  useEffect(() => {
+    return () => {
+      torsoGeometry.dispose();
+    };
+  }, [torsoGeometry]);
 
   return (
     <group>
@@ -145,10 +151,17 @@ function useRegionState(id: MeasurementId) {
 /** Gentle breathing pulse on the selected region (runs on the R3F frame loop). */
 function usePulse(active: boolean) {
   const groupRef = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
+  const elapsedRef = useRef(0);
+
+  // Use frame delta instead of THREE.Clock (deprecated → THREE.Timer in r183+).
+  // R3F still owns an internal clock; app code must not call clock APIs.
+  useFrame((_, delta) => {
     const group = groupRef.current;
     if (!group) return;
-    const target = active ? 1 + Math.sin(clock.elapsedTime * 4.2) * 0.045 : 1;
+    elapsedRef.current += delta;
+    const target = active
+      ? 1 + Math.sin(elapsedRef.current * 4.2) * 0.045
+      : 1;
     group.scale.setScalar(THREE.MathUtils.lerp(group.scale.x, target, 0.2));
   });
   return groupRef;
@@ -198,6 +211,12 @@ function LineRegion({ id, anchor }: RegionProps) {
       tubeGeometry: new THREE.TubeGeometry(curve, 24, 0.028, 8, false),
     };
   }, [anchor]);
+
+  useEffect(() => {
+    return () => {
+      tubeGeometry.dispose();
+    };
+  }, [tubeGeometry]);
 
   return (
     <group ref={groupRef}>
@@ -329,9 +348,21 @@ export default function InteractiveMannequin({
       aria-label="Interactive 3D mannequin. Tap a highlighted region to open its measurement lesson."
     >
       <Canvas
-        shadows
-        dpr={[1, 2]}
-        camera={{ position: [0.5, 1.5, 2.1], fov: 33 }}
+        // "percentage" → THREE.PCFShadowMap (PCFSoftShadowMap is deprecated in r182+)
+        shadows="percentage"
+        dpr={[1, 1.75]}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
+        camera={{ position: [0.5, 1.5, 2.1], fov: 33, near: 0.1, far: 40 }}
+        onCreated={({ gl }) => {
+          gl.shadowMap.enabled = true;
+          gl.shadowMap.type = THREE.PCFShadowMap;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+        }}
         onPointerMissed={() => select(null)}
       >
         <StudioLighting />

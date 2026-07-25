@@ -71,13 +71,37 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   hydrate: async () => {
     if (get().hydrated) return;
-    const photos = await db.studioPhotos.orderBy("createdAt").reverse().toArray();
-    set({
-      hydrated: true,
-      photos,
-      activePhotoId: photos[0]?.id ?? null,
-      phase: photos.length > 0 ? "workspace" : "camera",
-    });
+    try {
+      const { withDb } = await import("@/lib/db/safe");
+      const { data: photos, error } = await withDb(
+        () => db.studioPhotos.orderBy("createdAt").reverse().toArray(),
+        [] as StudioPhotoRecord[],
+      );
+      if (error) {
+        set({
+          hydrated: true,
+          photos: [],
+          cameraError: error,
+        });
+        return;
+      }
+      set({
+        hydrated: true,
+        photos,
+        activePhotoId: photos[0]?.id ?? null,
+        // Keep users on Camera when empty so Capture is immediately available.
+        phase: photos.length > 0 ? "workspace" : "camera",
+      });
+    } catch (error) {
+      set({
+        hydrated: true,
+        photos: [],
+        cameraError:
+          error instanceof Error
+            ? error.message
+            : "Could not load saved fabric photos.",
+      });
+    }
   },
 
   setPhase: (phase) => set({ phase }),
@@ -88,8 +112,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   saveCapture: async (label) => {
     const preview = get().capturePreview;
-    if (!preview) return null;
+    if (!preview) {
+      throw new Error("No captured image to save.");
+    }
+    if (!preview.dataUrl?.startsWith("data:image/")) {
+      throw new Error("Captured image data is invalid.");
+    }
 
+    const { withDb } = await import("@/lib/db/safe");
     const record: StudioPhotoRecord = {
       id: createId(),
       dataUrl: preview.dataUrl,
@@ -100,7 +130,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       updatedAt: new Date(),
     };
 
-    await db.studioPhotos.put(record);
+    const { error } = await withDb(async () => {
+      await db.studioPhotos.put(record);
+      return true;
+    }, false);
+
+    if (error) {
+      throw new Error(error);
+    }
+
     set((state) => ({
       photos: [record, ...state.photos],
       activePhotoId: record.id,
@@ -109,6 +147,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       overlay: { ...DEFAULT_OVERLAY },
       crop: { ...DEFAULT_CROP },
       zoom: 1,
+      cameraError: null,
     }));
     return record;
   },
@@ -123,7 +162,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }),
 
   deletePhoto: async (id) => {
-    await db.studioPhotos.delete(id);
+    const { withDb } = await import("@/lib/db/safe");
+    const { error } = await withDb(async () => {
+      await db.studioPhotos.delete(id);
+      return true;
+    }, false);
+    if (error) {
+      throw new Error(error);
+    }
     set((state) => {
       const photos = state.photos.filter((photo) => photo.id !== id);
       const activePhotoId =

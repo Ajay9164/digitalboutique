@@ -1,10 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, CameraOff, Lock, RefreshCw, Snowflake } from "lucide-react";
 import {
+  Camera,
+  CameraOff,
+  CheckCircle2,
+  Loader2,
+  Lock,
+  RefreshCw,
+  Snowflake,
+} from "lucide-react";
+import {
+  attachStreamToVideo,
   cameraErrorMessage,
-  freezeVideoFrame,
+  captureVideoFrame,
   getCameraPermission,
   isCameraSupported,
   requestCameraStream,
@@ -20,8 +29,11 @@ export function CameraCapture({ className }: { className?: string }) {
   const streamRef = useRef<MediaStream | null>(null);
   const [live, setLive] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [facing, setFacing] = useState<"environment" | "user">("environment");
   const [permission, setPermission] = useState<CameraPermission>("prompt");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const cameraError = useStudioStore((s) => s.cameraError);
   const setCameraError = useStudioStore((s) => s.setCameraError);
@@ -42,7 +54,6 @@ export function CameraCapture({ className }: { className?: string }) {
     };
   }, []);
 
-  // Soft-check permission without blocking first paint (avoids sync setState in effect).
   useEffect(() => {
     let cancelled = false;
     const handle = window.setTimeout(() => {
@@ -56,6 +67,12 @@ export function CameraCapture({ className }: { className?: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!statusMessage) return;
+    const timer = window.setTimeout(() => setStatusMessage(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [statusMessage]);
+
   const startCamera = useCallback(
     async (nextFacing: "environment" | "user" = facing) => {
       if (!isCameraSupported()) {
@@ -66,25 +83,32 @@ export function CameraCapture({ className }: { className?: string }) {
 
       setStarting(true);
       setCameraError(null);
+      setStatusMessage(null);
 
       try {
         stopStream(streamRef.current);
+        streamRef.current = null;
+
         const stream = await requestCameraStream(nextFacing);
         streamRef.current = stream;
+
         const video = videoRef.current;
-        if (video) {
-          video.srcObject = stream;
-          await video.play();
+        if (!video) {
+          throw new Error("Camera preview element is missing. Reload and try again.");
         }
+
+        await attachStreamToVideo(video, stream);
         setLive(true);
         setPermission("granted");
         setCapturePreview(null);
+        setStatusMessage("Camera ready — point at fabric and capture.");
       } catch (error) {
-        setCameraError(cameraErrorMessage(error));
+        stopStream(streamRef.current);
+        streamRef.current = null;
         setLive(false);
+        setCameraError(cameraErrorMessage(error));
         const status = await refreshPermission();
         if (status === "prompt") {
-          // Browser may still report prompt after a denial without Permissions API.
           setPermission("denied");
         }
       } finally {
@@ -94,25 +118,70 @@ export function CameraCapture({ className }: { className?: string }) {
     [facing, refreshPermission, setCameraError, setCapturePreview],
   );
 
-  const handleFreeze = () => {
+  const handleCapture = async () => {
     const video = videoRef.current;
-    if (!video || !live) return;
+    if (!video) {
+      setCameraError("Camera preview is unavailable. Enable the camera again.");
+      return;
+    }
+    if (!live) {
+      setCameraError("Enable the camera first, then tap Capture image.");
+      return;
+    }
+
+    setCapturing(true);
+    setCameraError(null);
+    setStatusMessage(null);
+
     try {
-      const frozen = freezeVideoFrame(video);
+      const frozen = await captureVideoFrame(video);
       setCapturePreview(frozen);
       stopStream(streamRef.current);
       streamRef.current = null;
       setLive(false);
+      setStatusMessage("Frame captured — review it, then save.");
     } catch (error) {
       setCameraError(
-        error instanceof Error ? error.message : "Failed to freeze frame.",
+        error instanceof Error ? error.message : "Failed to capture image.",
       );
+    } finally {
+      setCapturing(false);
     }
   };
 
   const handleRetake = () => {
     setCapturePreview(null);
+    setStatusMessage(null);
+    setCameraError(null);
     void startCamera(facing);
+  };
+
+  const handleSave = async () => {
+    if (!capturePreview) {
+      setCameraError("Nothing to save. Capture an image first.");
+      return;
+    }
+
+    setSaving(true);
+    setCameraError(null);
+    setStatusMessage(null);
+
+    try {
+      const saved = await saveCapture();
+      if (!saved) {
+        setCameraError("Save failed — no capture was available.");
+        return;
+      }
+      setStatusMessage("Fabric photo saved on this device.");
+    } catch (error) {
+      setCameraError(
+        error instanceof Error
+          ? error.message
+          : "Could not save the fabric photo to local storage.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const flipCamera = () => {
@@ -148,7 +217,7 @@ export function CameraCapture({ className }: { className?: string }) {
             // eslint-disable-next-line @next/next/no-img-element -- local data URL capture
             <img
               src={capturePreview.dataUrl}
-              alt="Frozen fabric capture"
+              alt="Captured fabric"
               className="absolute inset-0 h-full w-full object-cover"
             />
           ) : null}
@@ -171,7 +240,11 @@ export function CameraCapture({ className }: { className?: string }) {
                   disabled={starting}
                   onClick={() => void startCamera(facing)}
                 >
-                  <Camera aria-hidden="true" />
+                  {starting ? (
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Camera aria-hidden="true" />
+                  )}
                   {permission === "denied" ? "Try again" : "Enable camera"}
                 </Button>
               ) : null}
@@ -180,7 +253,7 @@ export function CameraCapture({ className }: { className?: string }) {
 
           {capturePreview ? (
             <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground">
-              Frozen
+              Captured
             </div>
           ) : live ? (
             <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur">
@@ -191,9 +264,19 @@ export function CameraCapture({ className }: { className?: string }) {
         </div>
       </div>
 
-      {cameraError && live ? (
-        <p className="text-center text-xs text-destructive" role="alert">
+      {cameraError ? (
+        <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-center text-xs text-destructive" role="alert">
           {cameraError}
+        </p>
+      ) : null}
+
+      {statusMessage ? (
+        <p
+          className="flex items-center justify-center gap-1.5 rounded-2xl bg-primary/10 px-3 py-2 text-center text-xs text-primary"
+          role="status"
+        >
+          <CheckCircle2 className="size-3.5 shrink-0" aria-hidden="true" />
+          {statusMessage}
         </p>
       ) : null}
 
@@ -205,6 +288,7 @@ export function CameraCapture({ className }: { className?: string }) {
               variant="outline"
               className="rounded-xl"
               onClick={handleRetake}
+              disabled={saving || starting}
             >
               <RefreshCw aria-hidden="true" />
               Retake
@@ -212,9 +296,13 @@ export function CameraCapture({ className }: { className?: string }) {
             <Button
               type="button"
               className="rounded-xl"
-              onClick={() => void saveCapture()}
+              disabled={saving}
+              onClick={() => void handleSave()}
             >
-              Save fabric photo
+              {saving ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : null}
+              {saving ? "Saving…" : "Save fabric photo"}
             </Button>
           </>
         ) : (
@@ -224,25 +312,29 @@ export function CameraCapture({ className }: { className?: string }) {
               variant="outline"
               className="rounded-xl"
               onClick={flipCamera}
-              disabled={!live || starting}
+              disabled={!live || starting || capturing}
             >
               Flip
             </Button>
             <Button
               type="button"
               className="rounded-xl"
-              disabled={!live || starting}
-              onClick={handleFreeze}
+              disabled={!live || starting || capturing}
+              onClick={() => void handleCapture()}
             >
-              <Snowflake aria-hidden="true" />
-              Freeze frame
+              {capturing ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Snowflake aria-hidden="true" />
+              )}
+              {capturing ? "Capturing…" : "Capture image"}
             </Button>
           </>
         )}
       </div>
 
       <p className="text-center text-[11px] text-muted-foreground">
-        Point at fabric under good light, freeze the frame, then save it locally
+        Point at fabric under good light, capture the image, then save it locally
         for pattern overlay. Camera access requires HTTPS (or localhost).
       </p>
     </div>

@@ -18,6 +18,7 @@ import {
   type PracticeFieldId,
   type PracticeGuesses,
 } from "@/features/drafts/lib/practice";
+import { MarkingTutorial } from "@/features/drafts/components/marking-tutorial";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -579,77 +580,12 @@ export function MeasurePracticeSurface({
 /* Marking animation                                                  */
 /* ------------------------------------------------------------------ */
 
-const MARKING_FRAMES = [
-  { id: "neck", label: "Neck width", formula: "Neck ÷ 6 + 0.5", d: "M40 20 H70" },
-  { id: "shoulder", label: "Shoulder", formula: "Length + 2.5 drop", d: "M70 20 L95 32" },
-  { id: "armhole", label: "Armhole", formula: "Bust ÷ 4 − 1.5", d: "M95 32 Q110 70 95 95" },
-  { id: "bust", label: "Bust line", formula: "(Bust + Ease) ÷ 4", d: "M40 95 H95" },
-  { id: "waist", label: "Waist line", formula: "(Waist + Ease) ÷ 4", d: "M40 130 H85" },
-  { id: "princess", label: "Princess", formula: "Apex depth + Sh ÷ 2", d: "M55 20 L60 100" },
-  { id: "darts", label: "Darts", formula: "Bust¼ − Waist¼", d: "M70 95 L65 125 L75 125 Z" },
-  { id: "side", label: "Side seam", formula: "Underarm → waist → hem", d: "M95 95 L85 130 L88 160" },
-  { id: "sa", label: "Seam allowance", formula: "Add at cutting", d: "M36 18 H74" },
-];
+/* ------------------------------------------------------------------ */
+/* Measurement marking — Phase 3 animated drafting board              */
+/* ------------------------------------------------------------------ */
 
 export function MarkingAnimationSurface({ focusIds }: { focusIds?: string[] }) {
-  const frames = focusIds?.length
-    ? MARKING_FRAMES.filter((f) => focusIds.includes(f.id))
-    : MARKING_FRAMES;
-  const [step, setStep] = useState(0);
-  const current = frames[Math.min(step, frames.length - 1)];
-
-  return (
-    <SurfaceShell title="Interactive · Measurement marking">
-      <div className="overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-b from-primary/5 to-muted/40 p-3">
-        <svg viewBox="0 0 140 180" className="mx-auto h-48 w-full max-w-xs">
-          <line x1="40" y1="18" x2="40" y2="165" className="stroke-muted-foreground/40" strokeWidth="1.5" />
-          {frames.slice(0, step + 1).map((frame) => (
-            <path
-              key={frame.id}
-              d={frame.d}
-              className={
-                frame.id === current?.id
-                  ? "stroke-primary fill-primary/20"
-                  : "stroke-foreground/50 fill-none"
-              }
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          ))}
-        </svg>
-      </div>
-      {current ? (
-        <div>
-          <p className="font-display text-lg font-semibold">{current.label}</p>
-          <p className="text-xs text-muted-foreground">{current.formula}</p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            Why: this mark exists so later lines have a true reference — never draw style before structure.
-          </p>
-        </div>
-      ) : null}
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="rounded-xl"
-          disabled={step === 0}
-          onClick={() => setStep((s) => Math.max(0, s - 1))}
-        >
-          Previous
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          className="rounded-xl"
-          disabled={step >= frames.length - 1}
-          onClick={() => setStep((s) => Math.min(frames.length - 1, s + 1))}
-        >
-          Next mark
-        </Button>
-      </div>
-    </SurfaceShell>
-  );
+  return <MarkingTutorial focusIds={focusIds} embedded />;
 }
 
 /* ------------------------------------------------------------------ */

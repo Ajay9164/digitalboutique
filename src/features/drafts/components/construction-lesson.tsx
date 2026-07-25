@@ -96,6 +96,7 @@ export function ConstructionLesson() {
         geometry={geometry}
         visible={visible}
         activeStep={step.id}
+        premiumGrid
       />
 
       <AnimatePresence mode="wait">
@@ -105,7 +106,7 @@ export function ConstructionLesson() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="space-y-4 rounded-3xl border border-white/40 bg-card/80 p-5 shadow-[0_14px_40px_-20px_rgba(15,23,28,0.3)] backdrop-blur-xl dark:border-white/10"
+          className="space-y-4 rounded-3xl border border-white/40 bg-card/80 p-5 shadow-[0_14px_40px_-20px_rgba(15,23,28,0.3)] backdrop-blur-xl dark:border-white/10 glass-panel"
         >
           <header className="space-y-2">
             <Badge variant="secondary" className="text-[10px] uppercase tracking-[0.16em]">
@@ -199,7 +200,9 @@ export function ConstructionLesson() {
                 }
               }}
             >
-              {stepIndex === CONSTRUCTION_STEPS.length - 1 ? "Complete" : "Next"}
+              {stepIndex === CONSTRUCTION_STEPS.length - 1
+                ? "Complete lesson"
+                : "Next Step"}
               {stepIndex < CONSTRUCTION_STEPS.length - 1 ? (
                 <ChevronRight aria-hidden="true" />
               ) : (

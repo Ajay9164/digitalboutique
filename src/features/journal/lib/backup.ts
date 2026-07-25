@@ -1,32 +1,45 @@
 import { db, type JournalBackup, type JournalProject } from "@/lib/db";
-import { createId, type ProjectInput } from "@/features/journal/lib/project";
+import { withDb } from "@/lib/db/safe";
+import {
+  createId,
+  normalizeLearningProgress,
+  safeDate,
+  type ProjectInput,
+} from "@/features/journal/lib/project";
 
 function reviveProject(
-  raw: JournalBackup["projects"][number] | JournalProject,
+  raw: JournalBackup["projects"][number] | JournalProject | Record<string, unknown>,
 ): JournalProject {
+  const row = raw as Partial<JournalProject> & {
+    learningProgress?: JournalProject["learningProgress"];
+  };
+
   return {
-    ...raw,
-    date: new Date(raw.date),
-    createdAt: new Date(raw.createdAt),
-    updatedAt: new Date(raw.updatedAt),
-    fabricPhoto: raw.fabricPhoto ?? null,
-    draftImage: raw.draftImage ?? null,
-    measurements: raw.measurements ?? {},
-    alterationNotes: raw.alterationNotes ?? "",
-    observations: raw.observations ?? "",
-    learningProgress: {
-      measurementsLearned: raw.learningProgress?.measurementsLearned ?? [],
-      constructionSteps: raw.learningProgress?.constructionSteps ?? [],
-      practiceCompletions: raw.learningProgress?.practiceCompletions ?? 0,
-      percentComplete: raw.learningProgress?.percentComplete ?? 0,
-      notes: raw.learningProgress?.notes ?? "",
-    },
+    id: String(row.id ?? createId()),
+    name: String(row.name ?? "Untitled project"),
+    date: safeDate(row.date as Date | string | undefined),
+    createdAt: safeDate(row.createdAt as Date | string | undefined),
+    updatedAt: safeDate(row.updatedAt as Date | string | undefined),
+    fabricPhoto: (row.fabricPhoto as string | null | undefined) ?? null,
+    draftImage: (row.draftImage as string | null | undefined) ?? null,
+    measurements: (row.measurements as JournalProject["measurements"]) ?? {},
+    alterationNotes: String(row.alterationNotes ?? ""),
+    observations: String(row.observations ?? ""),
+    patternType: (row.patternType as JournalProject["patternType"]) ?? "unspecified",
+    learningProgress: normalizeLearningProgress(row.learningProgress),
   };
 }
 
 export async function listProjects(): Promise<JournalProject[]> {
-  const rows = await db.projects.orderBy("updatedAt").reverse().toArray();
-  return rows.map(reviveProject);
+  const { data, error } = await withDb(
+    async () => {
+      const rows = await db.projects.orderBy("updatedAt").reverse().toArray();
+      return rows.map((row) => reviveProject(row));
+    },
+    [] as JournalProject[],
+  );
+  if (error) throw new Error(error);
+  return data;
 }
 
 export async function getProject(id: string): Promise<JournalProject | undefined> {

@@ -60,6 +60,28 @@ export type ProjectInput = {
   learningProgress: ProjectLearningProgress;
 };
 
+export function normalizeLearningProgress(
+  raw?: Partial<ProjectLearningProgress> | null,
+): ProjectLearningProgress {
+  return {
+    measurementsLearned: [...(raw?.measurementsLearned ?? [])],
+    constructionSteps: [...(raw?.constructionSteps ?? [])],
+    practiceCompletions: Number.isFinite(raw?.practiceCompletions)
+      ? Number(raw?.practiceCompletions)
+      : 0,
+    percentComplete: Math.min(
+      100,
+      Math.max(0, Number(raw?.percentComplete) || 0),
+    ),
+    notes: raw?.notes ?? "",
+  };
+}
+
+export function safeDate(value: Date | string | number | null | undefined): Date {
+  const date = value instanceof Date ? value : new Date(value ?? Date.now());
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
 export function createEmptyProjectInput(): ProjectInput {
   return {
     name: "",
@@ -70,26 +92,22 @@ export function createEmptyProjectInput(): ProjectInput {
     patternType: "unspecified",
     alterationNotes: "",
     observations: "",
-    learningProgress: { ...EMPTY_LEARNING, measurementsLearned: [], constructionSteps: [] },
+    learningProgress: normalizeLearningProgress(),
   };
 }
 
 export function projectToInput(project: JournalProject): ProjectInput {
+  const learning = normalizeLearningProgress(project.learningProgress);
   return {
-    name: project.name,
-    date: new Date(project.date),
-    fabricPhoto: project.fabricPhoto,
-    measurements: { ...EMPTY_MEASUREMENTS, ...project.measurements },
-    draftImage: project.draftImage,
-    patternType: project.patternType,
-    alterationNotes: project.alterationNotes,
-    observations: project.observations,
-    learningProgress: {
-      ...EMPTY_LEARNING,
-      ...project.learningProgress,
-      measurementsLearned: [...project.learningProgress.measurementsLearned],
-      constructionSteps: [...project.learningProgress.constructionSteps],
-    },
+    name: project.name ?? "",
+    date: safeDate(project.date),
+    fabricPhoto: project.fabricPhoto ?? null,
+    measurements: { ...EMPTY_MEASUREMENTS, ...(project.measurements ?? {}) },
+    draftImage: project.draftImage ?? null,
+    patternType: project.patternType ?? "unspecified",
+    alterationNotes: project.alterationNotes ?? "",
+    observations: project.observations ?? "",
+    learningProgress: learning,
   };
 }
 
@@ -136,8 +154,8 @@ export function filterAndSortProjects(
       project.name,
       project.alterationNotes,
       project.observations,
-      project.learningProgress.notes ?? "",
-      project.measurements.notes ?? "",
+      project.learningProgress?.notes ?? "",
+      project.measurements?.notes ?? "",
       patternTypeLabel(project.patternType),
     ]
       .join(" ")
@@ -149,16 +167,16 @@ export function filterAndSortProjects(
   result = [...result].sort((a, b) => {
     switch (sort) {
       case "date-asc":
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
+        return safeDate(a.date).getTime() - safeDate(b.date).getTime();
       case "name-asc":
-        return a.name.localeCompare(b.name);
+        return (a.name ?? "").localeCompare(b.name ?? "");
       case "name-desc":
-        return b.name.localeCompare(a.name);
+        return (b.name ?? "").localeCompare(a.name ?? "");
       case "updated-desc":
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        return safeDate(b.updatedAt).getTime() - safeDate(a.updatedAt).getTime();
       case "date-desc":
       default:
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
+        return safeDate(b.date).getTime() - safeDate(a.date).getTime();
     }
   });
 

@@ -1,42 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Download, X } from "lucide-react";
+import {
+  initInstallPromptListener,
+  useInstallPromptStore,
+} from "@/stores/install-prompt-store";
 import { Button } from "@/components/ui/button";
 
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-};
-
 /**
- * Captures the browser install prompt (Chromium) so users can install Tailor as a PWA.
- * Hidden when already standalone or when the event never fires (Safari / iOS).
+ * Premium PWA install CTA.
+ * Listens via a root-level store so beforeinstallprompt is captured early.
+ * Calling preventDefault() is paired with a visible Install button + prompt().
  */
 export function PwaInstallBanner() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
-    null,
-  );
-  const [dismissed, setDismissed] = useState(false);
+  const deferred = useInstallPromptStore((s) => s.deferred);
+  const dismissed = useInstallPromptStore((s) => s.dismissed);
+  const dismiss = useInstallPromptStore((s) => s.dismiss);
+  const promptInstall = useInstallPromptStore((s) => s.promptInstall);
+
+  useEffect(() => {
+    initInstallPromptListener();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
-      // iOS Safari
       ("standalone" in navigator &&
         Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
-
-    if (standalone) return;
-
-    const onPrompt = (event: Event) => {
-      event.preventDefault();
-      setDeferred(event as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+    if (standalone) {
+      useInstallPromptStore.getState().setDeferred(null);
+    }
   }, []);
 
   if (!deferred || dismissed) return null;
@@ -60,10 +55,8 @@ export function PwaInstallBanner() {
         type="button"
         size="sm"
         className="rounded-xl"
-        onClick={async () => {
-          await deferred.prompt();
-          await deferred.userChoice;
-          setDeferred(null);
+        onClick={() => {
+          void promptInstall();
         }}
       >
         Install
@@ -72,7 +65,7 @@ export function PwaInstallBanner() {
         type="button"
         className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
         aria-label="Dismiss install prompt"
-        onClick={() => setDismissed(true)}
+        onClick={() => dismiss()}
       >
         <X className="size-4" aria-hidden="true" />
       </button>

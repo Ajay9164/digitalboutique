@@ -15,17 +15,12 @@ export function LessonPageClient({
   lessonId: string;
 }) {
   const hydrate = useJourneyStore((s) => s.hydrate);
-  const refresh = useJourneyStore((s) => s.refresh);
   const hydrated = useJourneyStore((s) => s.hydrated);
   const dashboard = useJourneyStore((s) => s.dashboard);
 
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
-
-  useEffect(() => {
-    void refresh();
-  }, [lessonId, refresh]);
 
   const def = JOURNEY_LESSON_MAP[lessonId];
   if (!def || def.stageId !== stageId) {
@@ -40,7 +35,10 @@ export function LessonPageClient({
     .flatMap((s) => s.lessons)
     .find((l) => l.id === lessonId);
 
-  if (!lesson) notFound();
+  if (!lesson) {
+    // Soft-recover: hydrate may be stale after navigation — show skeleton once.
+    return <PageSkeleton />;
+  }
 
   return (
     <LessonPlayer

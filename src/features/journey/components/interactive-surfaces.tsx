@@ -428,13 +428,39 @@ export function MeasurePracticeSurface({
   difficulty?: "easy" | "hard";
   onScored?: (score: number, total: number) => void;
 }) {
-  const [cards, setCards] = useState(() => buildMeasureCards(difficulty));
+  // Client-only random deck: keep SSR/client first paint identical (null),
+  // then adjust during render after mount (avoids hydration mismatch + effect loops).
+  const [deck, setDeck] = useState<{
+    difficulty: "easy" | "hard";
+    cards: MeasureCard[];
+  } | null>(null);
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [hint, setHint] = useState(false);
   const [done, setDone] = useState(false);
 
+  if (
+    typeof window !== "undefined" &&
+    (deck === null || deck.difficulty !== difficulty)
+  ) {
+    setDeck({ difficulty, cards: buildMeasureCards(difficulty) });
+    setIndex(0);
+    setScore(0);
+    setFeedback(null);
+    setHint(false);
+    setDone(false);
+  }
+
+  if (!deck) {
+    return (
+      <SurfaceShell title="Practice">
+        <p className="text-sm text-muted-foreground">Preparing cards…</p>
+      </SurfaceShell>
+    );
+  }
+
+  const cards = deck.cards;
   const card = cards[index];
   const labelFor = (id: string) =>
     MEASUREMENTS.find((m) => m.id === id)?.label ?? id;
@@ -468,7 +494,7 @@ export function MeasurePracticeSurface({
             variant="outline"
             className="rounded-xl"
             onClick={() => {
-              setCards(buildMeasureCards(difficulty));
+              setDeck({ difficulty, cards: buildMeasureCards(difficulty) });
               setIndex(0);
               setScore(0);
               setDone(false);
@@ -643,10 +669,22 @@ export function DraftPracticeSurface({
   targetScore?: number;
   onScored?: (score: number, total: number) => void;
 }) {
-  const [body] = useState(() => generateRandomBody());
-  const [inputs] = useState(() => generateRandomInputs());
+  const [session, setSession] = useState<{
+    body: ReturnType<typeof generateRandomBody>;
+    inputs: ReturnType<typeof generateRandomInputs>;
+  } | null>(null);
+
+  if (typeof window !== "undefined" && session === null) {
+    setSession({
+      body: generateRandomBody(),
+      inputs: generateRandomInputs(),
+    });
+  }
+
+  const body = session?.body ?? null;
+  const inputs = session?.inputs ?? null;
   const answers = useMemo(
-    () => getCorrectAnswers(body, inputs),
+    () => (body && inputs ? getCorrectAnswers(body, inputs) : null),
     [body, inputs],
   );
   const [guesses, setGuesses] = useState<PracticeGuesses>({});
@@ -663,6 +701,14 @@ export function DraftPracticeSurface({
     setHintsLeft((h) => h - 1);
     setRevealed((prev) => ({ ...prev, [id]: true }));
   };
+
+  if (!body || !inputs || !answers) {
+    return (
+      <SurfaceShell title="Practice · Drafting">
+        <p className="text-sm text-muted-foreground">Preparing practice…</p>
+      </SurfaceShell>
+    );
+  }
 
   return (
     <SurfaceShell title="Practice · Drafting">

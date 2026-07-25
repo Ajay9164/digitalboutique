@@ -184,9 +184,7 @@ async function upsertLessonStart(lessonId: string): Promise<JourneyLessonRecord>
   const existing = await db.journeyLessons.get(lessonId);
   const now = new Date();
   if (existing) {
-    const next = { ...existing, updatedAt: now };
-    await db.journeyLessons.put(next);
-    return next;
+    return existing;
   }
   const row: JourneyLessonRecord = {
     id: lessonId,
@@ -205,15 +203,30 @@ async function upsertLessonStart(lessonId: string): Promise<JourneyLessonRecord>
   return row;
 }
 
-export async function visitLesson(lessonId: string): Promise<void> {
+/** @returns true when progress or lesson rows changed (caller should refresh). */
+export async function visitLesson(lessonId: string): Promise<boolean> {
   const progress = await getOrCreateJourneyProgress();
+  const alreadyCurrent =
+    progress.currentLessonId === lessonId &&
+    progress.lastVisitedLessonId === lessonId;
+
+  const existingLesson = await db.journeyLessons.get(lessonId);
   await upsertLessonStart(lessonId);
-  await db.journeyProgress.put({
-    ...progress,
-    currentLessonId: lessonId,
-    lastVisitedLessonId: lessonId,
-    updatedAt: new Date(),
-  });
+  const createdLesson = !existingLesson;
+
+  // Avoid redundant writes that force full dashboard rebuilds on every mount.
+  if (alreadyCurrent && !createdLesson) return false;
+
+  if (!alreadyCurrent) {
+    await db.journeyProgress.put({
+      ...progress,
+      currentLessonId: lessonId,
+      lastVisitedLessonId: lessonId,
+      updatedAt: new Date(),
+    });
+  }
+
+  return true;
 }
 
 export async function completeLessonSection(

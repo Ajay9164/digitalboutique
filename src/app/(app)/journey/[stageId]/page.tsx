@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StagePageClient } from "@/features/journey/components/stage-page-client";
+import { FeatureErrorBoundary } from "@/components/shared/feature-error-boundary";
 import { JOURNEY_STAGES } from "@/features/journey/data/curriculum";
 
 type Props = { params: Promise<{ stageId: string }> };
@@ -19,5 +20,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function JourneyStagePage({ params }: Props) {
   const { stageId } = await params;
-  return <StagePageClient stageId={stageId} />;
+  return (
+    <FeatureErrorBoundary
+      title="Stage failed to load"
+      description="Return to the journey dashboard or retry this stage."
+    >
+      <StagePageClient stageId={stageId} />
+    </FeatureErrorBoundary>
+  );
 }

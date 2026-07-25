@@ -22,12 +22,34 @@ export const useFabStore = create<FabState>((set) => ({
   ariaLabel: "Create new item",
   onPress: null,
   showFab: (options = {}) =>
-    set((state) => ({
-      isVisible: true,
-      label: options.label ?? state.label,
-      ariaLabel: options.ariaLabel ?? options.label ?? state.ariaLabel,
-      onPress: options.onPress ?? state.onPress,
-    })),
-  hideFab: () => set({ isVisible: false, onPress: null }),
-  setFabHandler: (handler) => set({ onPress: handler }),
+    set((state) => {
+      const label = options.label ?? state.label;
+      const ariaLabel = options.ariaLabel ?? options.label ?? state.ariaLabel;
+      const onPress =
+        options.onPress !== undefined ? options.onPress : state.onPress;
+
+      if (
+        state.isVisible &&
+        state.label === label &&
+        state.ariaLabel === ariaLabel &&
+        state.onPress === onPress
+      ) {
+        return state;
+      }
+
+      return {
+        isVisible: true,
+        label,
+        ariaLabel,
+        onPress,
+      };
+    }),
+  hideFab: () =>
+    set((state) =>
+      state.isVisible || state.onPress
+        ? { isVisible: false, onPress: null }
+        : state,
+    ),
+  setFabHandler: (handler) =>
+    set((state) => (state.onPress === handler ? state : { onPress: handler })),
 }));

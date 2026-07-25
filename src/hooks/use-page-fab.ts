@@ -1,33 +1,41 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFabStore } from "@/stores/fab-store";
 
 /**
  * Enables the floating action button for a route while mounted.
- * Pass a no-op or future handler — no business logic yet.
+ * onPress is stored in a ref so identity changes do not re-fire the effect
+ * (prevents React #185 update-depth loops with Zustand action + showFab).
  */
-export function usePageFab(options: {
-  label?: string;
-  ariaLabel?: string;
-  onPress?: () => void;
-} = {}) {
+export function usePageFab(
+  options: {
+    label?: string;
+    ariaLabel?: string;
+    onPress?: () => void;
+  } = {},
+) {
   const showFab = useFabStore((state) => state.showFab);
   const hideFab = useFabStore((state) => state.hideFab);
 
+  const onPressRef = useRef(options.onPress);
+
+  useEffect(() => {
+    onPressRef.current = options.onPress;
+  }, [options.onPress]);
+
+  const label = options.label ?? "Create";
+  const ariaLabel = options.ariaLabel ?? label;
+
   useEffect(() => {
     showFab({
-      label: options.label ?? "Create",
-      ariaLabel: options.ariaLabel,
-      onPress: options.onPress ?? (() => undefined),
+      label,
+      ariaLabel,
+      onPress: () => {
+        onPressRef.current?.();
+      },
     });
 
     return () => hideFab();
-  }, [
-    hideFab,
-    options.ariaLabel,
-    options.label,
-    options.onPress,
-    showFab,
-  ]);
+  }, [ariaLabel, hideFab, label, showFab]);
 }

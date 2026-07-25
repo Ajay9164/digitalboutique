@@ -15,12 +15,14 @@ type ProjectCardProps = {
 };
 
 export function ProjectCard({ project, onOpen }: ProjectCardProps) {
-  const progress = Math.min(100, Math.max(0, project.learningProgress.percentComplete));
+  const progress = Math.min(
+    100,
+    Math.max(0, project.learningProgress?.percentComplete ?? 0),
+  );
 
   return (
     <motion.button
       type="button"
-      layout
       whileTap={{ scale: 0.98 }}
       onClick={onOpen}
       className={cn(

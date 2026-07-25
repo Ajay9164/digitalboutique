@@ -49,8 +49,10 @@ export const useJourneyStore = create<JourneyStore>((set, get) => ({
   },
 
   openLesson: async (lessonId) => {
-    await visitLesson(lessonId);
-    await get().refresh();
+    const changed = await visitLesson(lessonId);
+    if (changed || !get().dashboard) {
+      await get().refresh();
+    }
   },
 
   markSection: async (lessonId, sectionId) => {

@@ -39,6 +39,7 @@ type JournalState = {
   errorMessage: string | null;
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
+  retryStorage: () => Promise<void>;
   setFilter: (partial: Partial<JournalFilter>) => void;
   setSort: (sort: JournalSort) => void;
   openCreate: () => void;
@@ -68,13 +69,40 @@ export const useJournalStore = create<JournalState>((set, get) => ({
 
   hydrate: async () => {
     if (get().hydrated) return;
-    const projects = await listProjects();
-    set({ hydrated: true, projects });
+    try {
+      const projects = await listProjects();
+      set({ hydrated: true, projects, errorMessage: null });
+    } catch (error) {
+      set({
+        hydrated: true,
+        projects: [],
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "Journal storage is unavailable on this device.",
+      });
+    }
+  },
+
+  retryStorage: async () => {
+    const { resetDbAvailabilityCache } = await import("@/lib/db/safe");
+    resetDbAvailabilityCache();
+    set({ hydrated: false, errorMessage: null, projects: [] });
+    await get().hydrate();
   },
 
   refresh: async () => {
-    const projects = await listProjects();
-    set({ projects });
+    try {
+      const projects = await listProjects();
+      set({ projects, errorMessage: null });
+    } catch (error) {
+      set({
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "Could not refresh journal projects.",
+      });
+    }
   },
 
   setFilter: (partial) =>

@@ -37,11 +37,10 @@ export const useLearningHubStore = create<LearningHubState>((set, get) => ({
   },
 
   refresh: async () => {
-    const snapshot = await loadLearningSnapshot();
+    const snapshot = await loadLearningSnapshot({ evaluateSideEffects: false });
     set({
       snapshot,
       showOnboarding: !snapshot.profile.onboardingComplete,
-      celebration: snapshot.pendingCelebration ?? get().celebration,
     });
   },
 

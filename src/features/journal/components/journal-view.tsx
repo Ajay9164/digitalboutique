@@ -32,6 +32,7 @@ function JournalFab() {
 
 export function JournalView() {
   const hydrate = useJournalStore((s) => s.hydrate);
+  const retryStorage = useJournalStore((s) => s.retryStorage);
   const view = useJournalStore((s) => s.view);
   const projects = useJournalStore((s) => s.projects);
   const visible = useJournalStore(selectVisibleProjects);
@@ -99,6 +100,26 @@ export function JournalView() {
           {errorMessage ?? statusMessage}
         </p>
       )}
+
+      {hydrated && errorMessage && projects.length === 0 ? (
+        <div className="glass-panel rounded-3xl px-5 py-8 text-center">
+          <p className="font-display text-lg font-semibold">
+            Journal storage unavailable
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Tailor could not read IndexedDB on this device. You can keep browsing
+            other tools offline; try leaving private mode or freeing storage, then
+            reload.
+          </p>
+          <Button
+            type="button"
+            className="mt-4 rounded-xl"
+            onClick={() => void retryStorage()}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : null}
 
       <JournalToolbar />
 

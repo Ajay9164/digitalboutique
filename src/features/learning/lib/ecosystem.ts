@@ -292,20 +292,28 @@ async function maybeCelebrate(
   return null;
 }
 
-export async function loadLearningSnapshot(): Promise<LearningSnapshot> {
+export async function loadLearningSnapshot(
+  options: { evaluateSideEffects?: boolean } = {},
+): Promise<LearningSnapshot> {
+  const evaluateSideEffects = options.evaluateSideEffects ?? true;
   let profile = await getOrCreateProfile();
   const stats = await gatherStats();
   const learningPercent = computePercent(stats);
 
-  const newlyUnlocked = await evaluateAchievements({
-    ...stats,
-    streak: profile.currentStreak,
-    learningPercent,
-  });
+  let newlyUnlocked: AchievementId[] = [];
+  let celebration: LearningSnapshot["pendingCelebration"] = null;
 
-  profile = await getOrCreateProfile();
-  const celebration = await maybeCelebrate(profile, learningPercent, newlyUnlocked);
-  profile = await getOrCreateProfile();
+  if (evaluateSideEffects) {
+    newlyUnlocked = await evaluateAchievements({
+      ...stats,
+      streak: profile.currentStreak,
+      learningPercent,
+    });
+
+    profile = await getOrCreateProfile();
+    celebration = await maybeCelebrate(profile, learningPercent, newlyUnlocked);
+    profile = await getOrCreateProfile();
+  }
 
   const activities = await db.learningActivity
     .orderBy("createdAt")

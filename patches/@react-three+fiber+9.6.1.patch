@@ -1,0 +1,173 @@
+diff --git a/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js b/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js
+index 3376d70..b6f5493 100644
+--- a/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js
++++ b/node_modules/@react-three/fiber/dist/events-583399dd.cjs.prod.js
+@@ -1,4 +1,44 @@
+ 'use strict';
++/* Tailor patch: Clock-compatible timing without THREE.Clock (deprecated since r183). Fiber v10 removes this; remove this patch when upgrading to stable R3F 10. */
++class FiberClock {
++  constructor(autoStart = true) {
++    this.autoStart = autoStart;
++    this.startTime = 0;
++    this.oldTime = 0;
++    this.elapsedTime = 0;
++    this.running = false;
++  }
++  start() {
++    this.startTime = performance.now();
++    this.oldTime = this.startTime;
++    this.elapsedTime = 0;
++    this.running = true;
++  }
++  stop() {
++    this.getElapsedTime();
++    this.running = false;
++    this.autoStart = false;
++  }
++  getElapsedTime() {
++    this.getDelta();
++    return this.elapsedTime;
++  }
++  getDelta() {
++    let diff = 0;
++    if (this.autoStart && !this.running) {
++      this.start();
++      return 0;
++    }
++    if (this.running) {
++      const newTime = performance.now();
++      diff = (newTime - this.oldTime) / 1000;
++      this.oldTime = newTime;
++      this.elapsedTime += diff;
++    }
++    return diff;
++  }
++}
++
+ 
+ var React = require('react');
+ var THREE = require('three');
+@@ -1038,7 +1078,7 @@ const createStore = (invalidate, advance) => {
+       linear: false,
+       flat: false,
+       controls: null,
+-      clock: new THREE__namespace.Clock(),
++      clock: new FiberClock(),
+       pointer,
+       mouse: pointer,
+       frameloop: 'always',
+diff --git a/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js b/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js
+index 97d8295..033533a 100644
+--- a/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js
++++ b/node_modules/@react-three/fiber/dist/events-b389eeca.esm.js
+@@ -1,3 +1,43 @@
++
++/* Tailor patch: Clock-compatible timing without THREE.Clock (deprecated since r183). Fiber v10 removes this; remove this patch when upgrading to stable R3F 10. */
++class FiberClock {
++  constructor(autoStart = true) {
++    this.autoStart = autoStart;
++    this.startTime = 0;
++    this.oldTime = 0;
++    this.elapsedTime = 0;
++    this.running = false;
++  }
++  start() {
++    this.startTime = performance.now();
++    this.oldTime = this.startTime;
++    this.elapsedTime = 0;
++    this.running = true;
++  }
++  stop() {
++    this.getElapsedTime();
++    this.running = false;
++    this.autoStart = false;
++  }
++  getElapsedTime() {
++    this.getDelta();
++    return this.elapsedTime;
++  }
++  getDelta() {
++    let diff = 0;
++    if (this.autoStart && !this.running) {
++      this.start();
++      return 0;
++    }
++    if (this.running) {
++      const newTime = performance.now();
++      diff = (newTime - this.oldTime) / 1000;
++      this.oldTime = newTime;
++      this.elapsedTime += diff;
++    }
++    return diff;
++  }
++}
+ import * as React from 'react';
+ import React__default from 'react';
+ import * as THREE from 'three';
+@@ -1013,7 +1053,7 @@ const createStore = (invalidate, advance) => {
+       linear: false,
+       flat: false,
+       controls: null,
+-      clock: new THREE.Clock(),
++      clock: new FiberClock(),
+       pointer,
+       mouse: pointer,
+       frameloop: 'always',
+diff --git a/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js b/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js
+index 1b04ea6..90c23aa 100644
+--- a/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js
++++ b/node_modules/@react-three/fiber/dist/events-f19bcc32.cjs.dev.js
+@@ -1,4 +1,44 @@
+ 'use strict';
++/* Tailor patch: Clock-compatible timing without THREE.Clock (deprecated since r183). Fiber v10 removes this; remove this patch when upgrading to stable R3F 10. */
++class FiberClock {
++  constructor(autoStart = true) {
++    this.autoStart = autoStart;
++    this.startTime = 0;
++    this.oldTime = 0;
++    this.elapsedTime = 0;
++    this.running = false;
++  }
++  start() {
++    this.startTime = performance.now();
++    this.oldTime = this.startTime;
++    this.elapsedTime = 0;
++    this.running = true;
++  }
++  stop() {
++    this.getElapsedTime();
++    this.running = false;
++    this.autoStart = false;
++  }
++  getElapsedTime() {
++    this.getDelta();
++    return this.elapsedTime;
++  }
++  getDelta() {
++    let diff = 0;
++    if (this.autoStart && !this.running) {
++      this.start();
++      return 0;
++    }
++    if (this.running) {
++      const newTime = performance.now();
++      diff = (newTime - this.oldTime) / 1000;
++      this.oldTime = newTime;
++      this.elapsedTime += diff;
++    }
++    return diff;
++  }
++}
++
+ 
+ var React = require('react');
+ var THREE = require('three');
+@@ -1038,7 +1078,7 @@ const createStore = (invalidate, advance) => {
+       linear: false,
+       flat: false,
+       controls: null,
+-      clock: new THREE__namespace.Clock(),
++      clock: new FiberClock(),
+       pointer,
+       mouse: pointer,
+       frameloop: 'always',

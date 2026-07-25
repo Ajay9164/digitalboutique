@@ -153,8 +153,7 @@ function usePulse(active: boolean) {
   const groupRef = useRef<THREE.Group>(null);
   const elapsedRef = useRef(0);
 
-  // Use frame delta instead of THREE.Clock (deprecated → THREE.Timer in r183+).
-  // R3F still owns an internal clock; app code must not call clock APIs.
+  // Accumulate via useFrame delta — avoid state.clock (THREE.Clock deprecated in r183+).
   useFrame((_, delta) => {
     const group = groupRef.current;
     if (!group) return;

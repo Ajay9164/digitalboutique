@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "qa": "npm run lint && npm test && npm run build"
+    "qa": "npm run lint && npm test && npm run build",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.2",
@@ -53,6 +54,7 @@
     "eslint-config-next": "16.2.11",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^27.0.0",
+    "patch-package": "^8.0.1",
     "serwist": "^9.5.12",
     "tailwindcss": "^4",
     "typescript": "^5",

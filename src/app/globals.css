@@ -123,13 +123,28 @@
   }
 
   html {
-    @apply font-sans scroll-smooth;
+    @apply font-sans scroll-smooth antialiased;
     text-size-adjust: 100%;
+    letter-spacing: -0.011em;
   }
 
   body {
     @apply bg-background text-foreground;
     min-height: 100dvh;
+    line-height: 1.6;
+    font-feature-settings: "ss01" on, "cv11" on;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  p {
+    line-height: 1.65;
   }
 
   ::selection {
@@ -139,23 +154,52 @@
 
 @utility font-display {
   font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 @utility glass-panel {
-  border: 1px solid color-mix(in oklch, white 40%, transparent);
-  background: color-mix(in oklch, var(--card) 78%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 18px 50px -24px rgba(15, 23, 28, 0.28);
+  border: 1px solid color-mix(in oklch, white 22%, transparent);
+  background: color-mix(in oklch, white 58%, transparent);
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
+  box-shadow:
+    0 1px 0 color-mix(in oklch, white 55%, transparent) inset,
+    0 18px 50px -24px rgba(15, 23, 28, 0.28);
 }
 
 .dark .glass-panel {
-  border-color: color-mix(in oklch, white 10%, transparent);
+  border-color: color-mix(in oklch, white 14%, transparent);
+  background: color-mix(in oklch, black 42%, transparent);
+  box-shadow:
+    0 1px 0 color-mix(in oklch, white 8%, transparent) inset,
+    0 22px 56px -20px rgba(0, 0, 0, 0.55);
+}
+
+@utility interactive-lift {
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .interactive-lift:hover {
+    transform: scale(1.02);
+    box-shadow: 0 16px 40px -18px rgba(15, 23, 28, 0.35);
+  }
+
+  .interactive-lift:active {
+    transform: scale(0.985);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .interactive-lift:hover,
+  .interactive-lift:active {
+    transform: none;
   }
 
   *,

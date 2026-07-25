@@ -28,11 +28,11 @@ export function PageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2.5rem] sm:leading-[1.1]">
           {title}
         </h1>
         {description ? (
-          <p className="max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+          <p className="max-w-xl text-[15px] leading-[1.65] text-muted-foreground">
             {description}
           </p>
         ) : null}

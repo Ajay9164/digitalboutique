@@ -43,9 +43,11 @@ export const useMeasurementStore = create<MeasurementState>((set, get) => ({
     });
   },
 
-  select: (id) => set({ selectedId: id }),
+  select: (id) =>
+    set((state) => (state.selectedId === id ? state : { selectedId: id })),
 
-  setHovered: (id) => set({ hoveredId: id }),
+  setHovered: (id) =>
+    set((state) => (state.hoveredId === id ? state : { hoveredId: id })),
 
   setUnit: (unit) => {
     set({ unit });

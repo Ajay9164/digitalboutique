@@ -213,4 +213,41 @@ describe("react #185 loop traps", () => {
     trap.restore();
     expect(trap.hits).toEqual([]);
   });
+
+  it("MeasurementsView mounts without update-depth loop", async () => {
+    const trap = installLoopTrap();
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      configurable: true,
+      value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => false,
+      }),
+    });
+
+    const { MeasurementsView } = await import(
+      "@/features/measurements/components/measurements-view"
+    );
+    const { useMeasurementStore } = await import("@/stores/measurement-store");
+    useMeasurementStore.setState({
+      hydrated: false,
+      selectedId: null,
+      hoveredId: null,
+      learnedIds: [],
+    });
+
+    await act(async () => {
+      render(<MeasurementsView />);
+      await new Promise((r) => setTimeout(r, 400));
+    });
+
+    trap.restore();
+    expect(trap.hits).toEqual([]);
+  });
 });

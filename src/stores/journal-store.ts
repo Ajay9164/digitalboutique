@@ -250,6 +250,11 @@ export const useJournalStore = create<JournalState>((set, get) => ({
   clearMessages: () => set({ statusMessage: null, errorMessage: null }),
 }));
 
+/**
+ * Pure helpers for useMemo — NEVER pass these to useJournalStore().
+ * Returning a new array from a Zustand selector breaks React 19
+ * useSyncExternalStore and causes Error #185 (Maximum update depth).
+ */
 export function selectVisibleProjects(state: JournalState): JournalProject[] {
   return filterAndSortProjects(state.projects, state.filter, state.sort);
 }

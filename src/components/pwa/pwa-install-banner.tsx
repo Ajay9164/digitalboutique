@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 
 /**
  * Premium PWA install CTA.
- * Listens via a root-level store so beforeinstallprompt is captured early.
- * Calling preventDefault() is paired with a visible Install button + prompt().
+ * beforeinstallprompt is captured in the store with preventDefault().
+ * prompt() runs only when the user taps Install — never automatically.
  */
 export function PwaInstallBanner() {
   const deferred = useInstallPromptStore((s) => s.deferred);

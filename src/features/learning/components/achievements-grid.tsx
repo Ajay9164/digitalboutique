@@ -33,9 +33,8 @@ const ICONS = {
 } as const;
 
 export function AchievementsGrid() {
-  const unlocked = useLearningHubStore(
-    (s) => s.snapshot?.unlockedAchievementIds ?? (EMPTY_ARRAY as string[]),
-  );
+  const snapshot = useLearningHubStore((s) => s.snapshot);
+  const unlocked = snapshot?.unlockedAchievementIds ?? EMPTY_ARRAY;
   const unlockedSet = new Set(unlocked);
 
   return (

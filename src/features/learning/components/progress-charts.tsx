@@ -20,13 +20,11 @@ import type { PracticeHistoryRecord } from "@/lib/db";
 type WeeklyPoint = { day: string; xp: number; practices: number };
 
 export function ProgressCharts() {
-  const chartWeekly = useLearningHubStore(
-    (s) => s.snapshot?.chartWeekly ?? (EMPTY_ARRAY as WeeklyPoint[]),
-  );
-  const practiceHistory = useLearningHubStore(
-    (s) =>
-      s.snapshot?.practiceHistory ?? (EMPTY_ARRAY as PracticeHistoryRecord[]),
-  );
+  const snapshot = useLearningHubStore((s) => s.snapshot);
+  const chartWeekly =
+    snapshot?.chartWeekly ?? (EMPTY_ARRAY as WeeklyPoint[]);
+  const practiceHistory =
+    snapshot?.practiceHistory ?? (EMPTY_ARRAY as PracticeHistoryRecord[]);
 
   const practiceChart = [...practiceHistory]
     .reverse()

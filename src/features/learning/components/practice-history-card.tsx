@@ -7,10 +7,9 @@ import { EMPTY_ARRAY } from "@/lib/empty";
 import type { PracticeHistoryRecord } from "@/lib/db";
 
 export function PracticeHistoryCard() {
-  const history = useLearningHubStore(
-    (s) =>
-      s.snapshot?.practiceHistory ?? (EMPTY_ARRAY as PracticeHistoryRecord[]),
-  );
+  const snapshot = useLearningHubStore((s) => s.snapshot);
+  const history =
+    snapshot?.practiceHistory ?? (EMPTY_ARRAY as PracticeHistoryRecord[]);
 
   return (
     <DashboardCard

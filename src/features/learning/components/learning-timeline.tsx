@@ -8,10 +8,9 @@ import { EMPTY_ARRAY } from "@/lib/empty";
 import type { LearningActivityRecord } from "@/lib/db";
 
 export function LearningTimeline() {
-  const activities = useLearningHubStore(
-    (s) =>
-      s.snapshot?.activities ?? (EMPTY_ARRAY as LearningActivityRecord[]),
-  );
+  const snapshot = useLearningHubStore((s) => s.snapshot);
+  const activities =
+    snapshot?.activities ?? (EMPTY_ARRAY as LearningActivityRecord[]);
 
   return (
     <DashboardCard

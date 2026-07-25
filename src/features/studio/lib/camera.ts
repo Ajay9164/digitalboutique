@@ -110,6 +110,8 @@ export async function attachStreamToVideo(
   video.srcObject = stream;
   video.muted = true;
   video.playsInline = true;
+  video.setAttribute("playsinline", "true");
+  video.setAttribute("webkit-playsinline", "true");
 
   await new Promise<void>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
@@ -241,14 +243,33 @@ export function freezeVideoFrame(
 
 /**
  * Async capture that waits for a paintable frame before freezing.
+ * Prefers requestVideoFrameCallback when the browser provides it.
  */
 export async function captureVideoFrame(
   video: HTMLVideoElement,
   options?: FreezeOptions,
 ): Promise<FrozenFrame> {
-  if (video.videoWidth === 0 || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+  if (typeof video.requestVideoFrameCallback === "function") {
+    await new Promise<void>((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        reject(
+          new Error(
+            "Timed out waiting for the next camera frame. Try again in a moment.",
+          ),
+        );
+      }, 3000);
+      video.requestVideoFrameCallback(() => {
+        window.clearTimeout(timeout);
+        resolve();
+      });
+    });
+  } else if (
+    video.videoWidth === 0 ||
+    video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+  ) {
     await waitForVideoDimensions(video);
   }
+
   return freezeVideoFrame(video, options);
 }
 

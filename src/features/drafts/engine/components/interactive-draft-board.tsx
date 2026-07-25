@@ -149,7 +149,10 @@ function InteractiveDraftBoardInner(
   };
 
   const onWheel = (event: Konva.KonvaEventObject<WheelEvent>) => {
-    event.evt.preventDefault();
+    // Konva binds wheel with { passive: false }; still guard cancelable for safety.
+    if (event.evt.cancelable) {
+      event.evt.preventDefault();
+    }
     const stage = stageRef.current;
     if (!stage) return;
     const oldScale = scale;

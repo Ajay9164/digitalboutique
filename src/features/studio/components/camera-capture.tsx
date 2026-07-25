@@ -24,6 +24,15 @@ import { useStudioStore } from "@/stores/studio-store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+function logCapture(stage: string, detail?: unknown) {
+  if (process.env.NODE_ENV !== "development") return;
+  if (detail === undefined) {
+    console.info(`[Capture] ${stage}`);
+    return;
+  }
+  console.info(`[Capture] ${stage}`, detail);
+}
+
 export function CameraCapture({ className }: { className?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -75,6 +84,7 @@ export function CameraCapture({ className }: { className?: string }) {
 
   const startCamera = useCallback(
     async (nextFacing: "environment" | "user" = facing) => {
+      logCapture("Enable camera clicked", { facing: nextFacing });
       if (!isCameraSupported()) {
         setPermission("unsupported");
         setCameraError("Camera API is not available in this browser.");
@@ -91,6 +101,7 @@ export function CameraCapture({ className }: { className?: string }) {
 
         const stream = await requestCameraStream(nextFacing);
         streamRef.current = stream;
+        logCapture("MediaStream acquired");
 
         const video = videoRef.current;
         if (!video) {
@@ -98,11 +109,16 @@ export function CameraCapture({ className }: { className?: string }) {
         }
 
         await attachStreamToVideo(video, stream);
+        logCapture("Video preview ready", {
+          width: video.videoWidth,
+          height: video.videoHeight,
+        });
         setLive(true);
         setPermission("granted");
         setCapturePreview(null);
         setStatusMessage("Camera ready — point at fabric and capture.");
       } catch (error) {
+        logCapture("Enable camera failed", error);
         stopStream(streamRef.current);
         streamRef.current = null;
         setLive(false);
@@ -119,13 +135,23 @@ export function CameraCapture({ className }: { className?: string }) {
   );
 
   const handleCapture = async () => {
+    logCapture("Button clicked");
     const video = videoRef.current;
+
+    // Never swallow clicks: Button uses pointer-events-none when disabled,
+    // so we keep Capture clickable and explain when the camera is not live.
     if (!video) {
       setCameraError("Camera preview is unavailable. Enable the camera again.");
+      logCapture("Stopped — missing video element");
       return;
     }
-    if (!live) {
+    if (!live || !streamRef.current) {
       setCameraError("Enable the camera first, then tap Capture image.");
+      logCapture("Stopped — camera not live");
+      return;
+    }
+    if (capturing || saving || starting) {
+      logCapture("Stopped — busy");
       return;
     }
 
@@ -134,13 +160,26 @@ export function CameraCapture({ className }: { className?: string }) {
     setStatusMessage(null);
 
     try {
+      logCapture("Capturing frame…", {
+        readyState: video.readyState,
+        width: video.videoWidth,
+        height: video.videoHeight,
+      });
       const frozen = await captureVideoFrame(video);
+      logCapture("Image generated", {
+        width: frozen.width,
+        height: frozen.height,
+        bytes: frozen.dataUrl.length,
+      });
+
       setCapturePreview(frozen);
       stopStream(streamRef.current);
       streamRef.current = null;
       setLive(false);
       setStatusMessage("Frame captured — review it, then save.");
+      logCapture("UI updated with preview");
     } catch (error) {
+      logCapture("Capture failed", error);
       setCameraError(
         error instanceof Error ? error.message : "Failed to capture image.",
       );
@@ -157,6 +196,7 @@ export function CameraCapture({ className }: { className?: string }) {
   };
 
   const handleSave = async () => {
+    logCapture("Save clicked");
     if (!capturePreview) {
       setCameraError("Nothing to save. Capture an image first.");
       return;
@@ -167,13 +207,17 @@ export function CameraCapture({ className }: { className?: string }) {
     setStatusMessage(null);
 
     try {
+      logCapture("Saving to IndexedDB…");
       const saved = await saveCapture();
       if (!saved) {
         setCameraError("Save failed — no capture was available.");
+        logCapture("Save returned null");
         return;
       }
       setStatusMessage("Fabric photo saved on this device.");
+      logCapture("Save complete", { id: saved.id });
     } catch (error) {
+      logCapture("Save failed", error);
       setCameraError(
         error instanceof Error
           ? error.message
@@ -197,6 +241,14 @@ export function CameraCapture({ className }: { className?: string }) {
         ? "Camera access is blocked. Open site settings, allow the camera, then tap Enable."
         : cameraError ??
           "Enable the camera with a tap — Tailor only requests access when you ask.";
+
+  const captureBlockedReason = !live
+    ? "Enable the camera to capture"
+    : capturing
+      ? "Capturing…"
+      : starting
+        ? "Starting camera…"
+        : null;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -265,7 +317,10 @@ export function CameraCapture({ className }: { className?: string }) {
       </div>
 
       {cameraError ? (
-        <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-center text-xs text-destructive" role="alert">
+        <p
+          className="rounded-2xl bg-destructive/10 px-3 py-2 text-center text-xs text-destructive"
+          role="alert"
+        >
           {cameraError}
         </p>
       ) : null}
@@ -319,7 +374,10 @@ export function CameraCapture({ className }: { className?: string }) {
             <Button
               type="button"
               className="rounded-xl"
-              disabled={!live || starting || capturing}
+              // Keep pointer events active so we can show why capture is blocked.
+              disabled={capturing || starting}
+              aria-disabled={!live || capturing || starting}
+              title={captureBlockedReason ?? "Capture the current camera frame"}
               onClick={() => void handleCapture()}
             >
               {capturing ? (
@@ -333,9 +391,17 @@ export function CameraCapture({ className }: { className?: string }) {
         )}
       </div>
 
+      {!live && !capturePreview ? (
+        <p className="text-center text-[11px] text-amber-700 dark:text-amber-300">
+          Capture stays inactive until the camera is enabled and shows a Live
+          preview.
+        </p>
+      ) : null}
+
       <p className="text-center text-[11px] text-muted-foreground">
         Point at fabric under good light, capture the image, then save it locally
-        for pattern overlay. Camera access requires HTTPS (or localhost).
+        for pattern overlay. Camera access requires HTTPS (or localhost). Photos
+        are stored on this device only (no cloud upload).
       </p>
     </div>
   );

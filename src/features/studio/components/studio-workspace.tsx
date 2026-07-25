@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { AlignmentGrid } from "@/features/studio/components/alignment-grid";
 import { MeasurementRuler } from "@/features/studio/components/measurement-ruler";
 import { PatternOverlay } from "@/features/studio/components/pattern-overlay";
@@ -12,6 +12,36 @@ import { cn } from "@/lib/utils";
 type StudioWorkspaceProps = {
   className?: string;
 };
+
+/**
+ * Zoom via native wheel listener with `{ passive: false }`.
+ * React's synthetic `onWheel` is passive, so preventDefault() there
+ * triggers: "Unable to preventDefault inside passive event listener".
+ */
+function useNonPassiveWheelZoom(
+  elementRef: React.RefObject<HTMLElement | null>,
+  onZoom: (deltaY: number) => void,
+) {
+  const onZoomRef = useRef(onZoom);
+  useEffect(() => {
+    onZoomRef.current = onZoom;
+  }, [onZoom]);
+
+  useEffect(() => {
+    const el = elementRef.current;
+    if (!el) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      onZoomRef.current(event.deltaY);
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", handleWheel);
+    };
+  }, [elementRef]);
+}
 
 export function StudioWorkspace({ className }: StudioWorkspaceProps) {
   const frameRef = useRef<HTMLDivElement>(null);
@@ -45,6 +75,16 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
 
   const photo = photos.find((item) => item.id === activePhotoId) ?? null;
   const pattern = PATTERN_MAP[patternId];
+
+  const handleZoomDelta = useCallback(
+    (deltaY: number) => {
+      const delta = deltaY > 0 ? -0.08 : 0.08;
+      setZoom(zoom + delta);
+    },
+    [setZoom, zoom],
+  );
+
+  useNonPassiveWheelZoom(frameRef, handleZoomDelta);
 
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -119,15 +159,6 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
     dragRef.current = null;
   }, []);
 
-  const onWheel = useCallback(
-    (event: React.WheelEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      const delta = event.deltaY > 0 ? -0.08 : 0.08;
-      setZoom(zoom + delta);
-    },
-    [setZoom, zoom],
-  );
-
   if (!photo) {
     return (
       <div
@@ -168,7 +199,6 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        onWheel={onWheel}
         className={cn(
           "relative touch-none overflow-hidden rounded-3xl border border-white/40 bg-zinc-900 shadow-[0_18px_50px_-24px_rgba(15,23,28,0.5)] dark:border-white/10",
           "aspect-[3/4] w-full cursor-grab active:cursor-grabbing sm:aspect-[4/5]",
@@ -179,7 +209,6 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
           className="absolute inset-0 origin-center transition-transform duration-150"
           style={{ transform: `scale(${zoom})` }}
         >
-          {/* Fabric photo with crop */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={photo.dataUrl}
@@ -189,7 +218,6 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
             style={{ clipPath }}
           />
 
-          {/* Dim outside crop when cropping */}
           {tool === "crop" ? (
             <div
               aria-hidden="true"
@@ -213,7 +241,6 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
           <PatternOverlay />
         </div>
 
-        {/* Crop handles hint */}
         {tool === "crop" ? (
           <div
             aria-hidden="true"

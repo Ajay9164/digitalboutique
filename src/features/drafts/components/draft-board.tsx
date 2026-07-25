@@ -17,7 +17,30 @@ type DraftBoardProps = {
   premiumGrid?: boolean;
 };
 
-const drawTransition = { duration: 0.85, ease: [0.22, 1, 0.36, 1] as const };
+/** Draw-on chalk stroke — 1.5s ease-in-out as specified for Phase 3. */
+const drawTransition = {
+  duration: 1.5,
+  ease: [0.42, 0, 0.58, 1] as const,
+};
+
+/** Tiny formula tooltips that fade in after the stroke finishes. */
+const labelTransition = {
+  delay: 1.15,
+  duration: 0.4,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
+
+const FORMULA_LABELS: Record<ConstructionStepId, string> = {
+  "center-line": "Blouse Length",
+  "bust-line": 'Bust/4 + 1.5"',
+  "waist-line": "Waist/4",
+  neck: "Neck/6 + 0.5\"",
+  shoulder: "Shoulder + Drop",
+  armhole: 'Bust/4 − 1.5"',
+  "side-seam": "Underarm → Hem",
+  darts: "Bust¼ − Waist¼",
+  hem: "Hem Level",
+};
 
 function DrawPath({
   d,
@@ -38,54 +61,71 @@ function DrawPath({
       d={d}
       fill="none"
       stroke="currentColor"
-      strokeWidth={active ? 2.6 : 1.7}
+      strokeWidth={active ? 2.8 : 1.7}
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeDasharray={dashed ? "5 4" : undefined}
-      className={active ? "text-primary" : "text-foreground/75"}
+      className={active ? "text-primary" : "text-foreground/70"}
       initial={reduceMotion ? false : { pathLength: 0, opacity: 0 }}
       animate={{ pathLength: 1, opacity: 1 }}
       transition={
         reduceMotion
           ? { duration: 0 }
-          : { ...drawTransition, delay: active ? 0.05 : 0 }
+          : { ...drawTransition, delay: active ? 0.04 : 0 }
       }
     />
   );
 }
 
-function Label({
+function FormulaLabel({
   x,
   y,
-  text,
+  stepId,
   show,
   active,
   reduceMotion,
+  anchor = "start",
 }: {
   x: number;
   y: number;
-  text: string;
+  stepId: ConstructionStepId;
   show: boolean;
   active: boolean;
   reduceMotion?: boolean | null;
+  anchor?: "start" | "middle" | "end";
 }) {
   if (!show) return null;
   return (
-    <motion.text
-      x={x}
-      y={y}
-      className={cn(
-        "fill-current text-[8px] font-semibold uppercase tracking-wider",
-        active ? "text-primary" : "text-muted-foreground",
-      )}
-      initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+    <motion.g
+      initial={reduceMotion ? false : { opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={
-        reduceMotion ? { duration: 0 } : { delay: 0.35, duration: 0.35 }
-      }
+      transition={reduceMotion ? { duration: 0 } : labelTransition}
     >
-      {text}
-    </motion.text>
+      <rect
+        x={anchor === "end" ? x - 52 : anchor === "middle" ? x - 26 : x - 2}
+        y={y - 9}
+        width={54}
+        height={12}
+        rx={3}
+        className={
+          active
+            ? "fill-primary/15 stroke-primary/35"
+            : "fill-card/80 stroke-border/50"
+        }
+        strokeWidth={0.5}
+      />
+      <text
+        x={x}
+        y={y}
+        textAnchor={anchor}
+        className={cn(
+          "fill-current text-[6.5px] font-semibold tracking-wide",
+          active ? "text-primary" : "text-muted-foreground",
+        )}
+      >
+        {FORMULA_LABELS[stepId]}
+      </text>
+    </motion.g>
   );
 }
 
@@ -103,37 +143,47 @@ export function DraftBoard({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-white/40 shadow-[0_18px_50px_-24px_rgba(15,23,28,0.35)] dark:border-white/10",
+        "relative overflow-hidden rounded-3xl",
+        /* Cutting-table glass edge + inner shadow */
+        "border border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-12px_28px_-18px_rgba(15,23,28,0.18),0_22px_50px_-28px_rgba(15,23,28,0.4)]",
+        "dark:border-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-14px_32px_-16px_rgba(0,0,0,0.45),0_22px_50px_-28px_rgba(0,0,0,0.55)]",
         premiumGrid
-          ? "bg-[linear-gradient(160deg,oklch(0.97_0.01_185)_0%,oklch(0.94_0.02_200)_45%,oklch(0.92_0.015_185)_100%)] dark:bg-[linear-gradient(160deg,oklch(0.22_0.02_200)_0%,oklch(0.18_0.02_185)_100%)]"
+          ? "bg-[linear-gradient(165deg,oklch(0.975_0.008_185)_0%,oklch(0.945_0.016_200)_48%,oklch(0.92_0.012_185)_100%)] dark:bg-[linear-gradient(165deg,oklch(0.24_0.018_200)_0%,oklch(0.18_0.016_185)_100%)]"
           : "bg-gradient-to-b from-primary/8 via-card/75 to-muted/40 dark:from-primary/10",
         className,
       )}
     >
+      {/* Soft table wash */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_55%)]"
+      />
+
       {/* Paper grain */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-40 mix-blend-multiply dark:opacity-25 dark:mix-blend-soft-light"
+        className="pointer-events-none absolute inset-0 opacity-35 mix-blend-multiply dark:opacity-20 dark:mix-blend-soft-light"
         style={{
           backgroundImage:
             "radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--foreground) 10%, transparent) 1px, transparent 0)",
           backgroundSize: "10px 10px",
         }}
       />
-      {/* Fine blueprint grid */}
+
+      {/* Engineering / cutting-table dual grid */}
       <div
         aria-hidden
         className={cn(
           "pointer-events-none absolute inset-0",
-          premiumGrid ? "opacity-50 dark:opacity-35" : "opacity-30 dark:opacity-20",
+          premiumGrid ? "opacity-55 dark:opacity-40" : "opacity-30 dark:opacity-20",
         )}
         style={{
           backgroundImage: premiumGrid
             ? [
-                "linear-gradient(color-mix(in oklch, var(--primary) 18%, transparent) 1px, transparent 1px)",
-                "linear-gradient(90deg, color-mix(in oklch, var(--primary) 18%, transparent) 1px, transparent 1px)",
-                "linear-gradient(color-mix(in oklch, var(--foreground) 8%, transparent) 1px, transparent 1px)",
-                "linear-gradient(90deg, color-mix(in oklch, var(--foreground) 8%, transparent) 1px, transparent 1px)",
+                "linear-gradient(color-mix(in oklch, var(--primary) 20%, transparent) 1px, transparent 1px)",
+                "linear-gradient(90deg, color-mix(in oklch, var(--primary) 20%, transparent) 1px, transparent 1px)",
+                "linear-gradient(color-mix(in oklch, var(--foreground) 9%, transparent) 1px, transparent 1px)",
+                "linear-gradient(90deg, color-mix(in oklch, var(--foreground) 9%, transparent) 1px, transparent 1px)",
               ].join(",")
             : "radial-gradient(circle at 1px 1px, color-mix(in oklch, var(--foreground) 12%, transparent) 1px, transparent 0)",
           backgroundSize: premiumGrid
@@ -145,44 +195,19 @@ export function DraftBoard({
       <svg
         viewBox={`0 0 ${DRAFT_VIEWBOX.width} ${DRAFT_VIEWBOX.height}`}
         role="img"
-        aria-label="Animated half-front blouse draft construction"
-        className="relative z-10 h-[340px] w-full sm:h-[400px]"
+        aria-label="Animated blouse draft construction — chalk lines draw as you advance steps"
+        className="relative z-10 h-[min(52vh,420px)] w-full min-h-[300px]"
       >
-        <g
-          stroke="currentColor"
-          className="text-foreground/10"
-          strokeWidth="0.4"
-        >
-          {Array.from({ length: 12 }).map((_, i) => (
-            <line
-              key={`v-${i}`}
-              x1={20 + i * 22}
-              y1={16}
-              x2={20 + i * 22}
-              y2={DRAFT_VIEWBOX.height - 16}
-            />
-          ))}
-          {Array.from({ length: 14 }).map((_, i) => (
-            <line
-              key={`h-${i}`}
-              x1={16}
-              y1={20 + i * 20}
-              x2={DRAFT_VIEWBOX.width - 16}
-              y2={20 + i * 20}
-            />
-          ))}
-        </g>
-
         <DrawPath
           d={`M ${g.centerTop.x} ${g.centerTop.y} L ${g.centerBottom.x} ${g.centerBottom.y}`}
           show={visible["center-line"]}
           active={is("center-line")}
           {...pathProps}
         />
-        <Label
-          x={g.centerTop.x + 5}
-          y={g.centerTop.y + 12}
-          text="CF"
+        <FormulaLabel
+          x={g.centerTop.x + 6}
+          y={g.centerTop.y + 14}
+          stepId="center-line"
           show={visible["center-line"]}
           active={is("center-line")}
           {...pathProps}
@@ -195,10 +220,10 @@ export function DraftBoard({
           dashed
           {...pathProps}
         />
-        <Label
+        <FormulaLabel
           x={g.bustEnd.x + 4}
-          y={g.bustEnd.y - 4}
-          text="Bust"
+          y={g.bustEnd.y - 5}
+          stepId="bust-line"
           show={visible["bust-line"]}
           active={is("bust-line")}
           {...pathProps}
@@ -222,10 +247,10 @@ export function DraftBoard({
           dashed
           {...pathProps}
         />
-        <Label
+        <FormulaLabel
           x={g.waistEnd.x + 4}
-          y={g.waistEnd.y - 4}
-          text="Waist"
+          y={g.waistEnd.y - 5}
+          stepId="waist-line"
           show={visible["waist-line"]}
           active={is("waist-line")}
           {...pathProps}
@@ -237,10 +262,10 @@ export function DraftBoard({
           active={is("neck")}
           {...pathProps}
         />
-        <Label
-          x={g.neckDepth.x + 6}
-          y={g.neckDepth.y + 10}
-          text="Neck"
+        <FormulaLabel
+          x={g.neckDepth.x + 8}
+          y={g.neckDepth.y + 12}
+          stepId="neck"
           show={visible.neck}
           active={is("neck")}
           {...pathProps}
@@ -252,12 +277,13 @@ export function DraftBoard({
           active={is("shoulder")}
           {...pathProps}
         />
-        <Label
-          x={g.shoulderOut.x - 22}
-          y={g.shoulderOut.y - 6}
-          text="Shoulder"
+        <FormulaLabel
+          x={g.shoulderOut.x - 4}
+          y={g.shoulderOut.y - 8}
+          stepId="shoulder"
           show={visible.shoulder}
           active={is("shoulder")}
+          anchor="end"
           {...pathProps}
         />
 
@@ -267,12 +293,13 @@ export function DraftBoard({
           active={is("armhole")}
           {...pathProps}
         />
-        <Label
-          x={g.underarm.x - 32}
+        <FormulaLabel
+          x={g.underarm.x - 4}
           y={(g.shoulderOut.y + g.underarm.y) / 2}
-          text="Armhole"
+          stepId="armhole"
           show={visible.armhole}
           active={is("armhole")}
+          anchor="end"
           {...pathProps}
         />
 
@@ -282,10 +309,10 @@ export function DraftBoard({
           active={is("side-seam")}
           {...pathProps}
         />
-        <Label
+        <FormulaLabel
           x={g.waistEnd.x + 4}
           y={(g.underarm.y + g.waistEnd.y) / 2}
-          text="Side"
+          stepId="side-seam"
           show={visible["side-seam"]}
           active={is("side-seam")}
           {...pathProps}
@@ -314,10 +341,10 @@ export function DraftBoard({
               animate={{ scale: 1 }}
               transition={reduceMotion ? { duration: 0 } : drawTransition}
             />
-            <Label
+            <FormulaLabel
               x={g.dartTip.x + 6}
-              y={g.dartTip.y + 12}
-              text="Dart"
+              y={g.dartTip.y + 14}
+              stepId="darts"
               show
               active={is("darts")}
               {...pathProps}
@@ -331,12 +358,13 @@ export function DraftBoard({
           active={is("hem")}
           {...pathProps}
         />
-        <Label
-          x={(g.centerBottom.x + g.hemEnd.x) / 2 - 8}
-          y={g.hemEnd.y + 12}
-          text="Hem"
+        <FormulaLabel
+          x={(g.centerBottom.x + g.hemEnd.x) / 2}
+          y={g.hemEnd.y + 14}
+          stepId="hem"
           show={visible.hem}
           active={is("hem")}
+          anchor="middle"
           {...pathProps}
         />
       </svg>

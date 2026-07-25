@@ -472,7 +472,7 @@ export default function InteractiveMannequin({
   return (
     <div
       className={cn(
-        "relative h-[50vh] min-h-[400px] w-full overflow-hidden",
+        "absolute inset-0 h-full min-h-[400px] w-full overflow-hidden",
         className,
       )}
       role="img"

@@ -13,12 +13,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDraftLearningStore } from "@/stores/draft-learning-store";
 import { cn } from "@/lib/utils";
 
-const ConstructionLesson = dynamic(
+const MarkingTutorial = dynamic(
   () =>
-    import("@/features/drafts/components/construction-lesson").then(
-      (m) => m.ConstructionLesson,
+    import("@/features/drafts/components/marking-tutorial").then(
+      (m) => m.MarkingTutorial,
     ),
-  { loading: () => <Skeleton className="h-80 w-full rounded-3xl" /> },
+  { loading: () => <Skeleton className="h-[28rem] w-full rounded-3xl" /> },
 );
 
 const PracticeMode = dynamic(
@@ -62,7 +62,7 @@ export function DraftLearningView() {
       <PageHeader
         eyebrow="Pattern craft"
         title="Draft Learning"
-        description="Learn construction, practice the numbers, then run the intelligent drafting engine."
+        description="Watch chalk lines draw themselves, learn the formulas, practice the numbers, then run the drafting engine."
       />
 
       <motion.div
@@ -116,7 +116,7 @@ export function DraftLearningView() {
       >
         {(
           [
-            { id: "lesson" as const, label: "Lesson", icon: Compass },
+            { id: "lesson" as const, label: "Marking", icon: Compass },
             { id: "practice" as const, label: "Practice", icon: PencilRuler },
             { id: "engine" as const, label: "Engine", icon: Cpu },
           ] as const
@@ -159,7 +159,7 @@ export function DraftLearningView() {
       </div>
 
       <FeatureErrorBoundary title="Draft mode failed to load">
-        {mode === "lesson" ? <ConstructionLesson /> : null}
+        {mode === "lesson" ? <MarkingTutorial /> : null}
         {mode === "practice" ? <PracticeMode /> : null}
         {mode === "engine" ? <DraftingEngine /> : null}
       </FeatureErrorBoundary>

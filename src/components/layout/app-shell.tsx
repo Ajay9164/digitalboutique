@@ -3,7 +3,6 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeveloperFooter } from "@/components/layout/developer-footer";
 import { FloatingActionButton } from "@/components/layout/floating-action-button";
-import { PageTransition } from "@/components/layout/page-transition";
 import { TopHeader } from "@/components/layout/top-header";
 import { PwaInstallBanner } from "@/components/pwa/pwa-install-banner";
 
@@ -30,9 +29,7 @@ export function AppShell({ children }: AppShellProps) {
         id="main-content"
         className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-[calc(7.75rem+env(safe-area-inset-bottom))] pt-7 sm:px-7 md:max-w-xl lg:max-w-2xl"
       >
-        <PageTransition>
-          <div className="space-y-8">{children}</div>
-        </PageTransition>
+        {children}
       </main>
 
       <PwaInstallBanner />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   CheckCircle2,
@@ -908,7 +909,7 @@ export function ProjectWorkflowSurface({
       <ol className="space-y-2">
         {PROJECT_STEPS.map((step, index) => (
           <li key={step.label}>
-            <a
+            <Link
               href={step.href}
               className={cn(
                 "flex items-start gap-3 rounded-2xl border px-3 py-3 transition hover:border-primary/40",
@@ -924,7 +925,7 @@ export function ProjectWorkflowSurface({
                 <span className="block text-sm font-semibold">{step.label}</span>
                 <span className="text-xs text-muted-foreground">{step.detail}</span>
               </span>
-            </a>
+            </Link>
           </li>
         ))}
       </ol>
@@ -940,7 +941,7 @@ export function MannequinCalloutSurface() {
         and mark each measurement learned. Your progress syncs back into this journey.
       </p>
       <Button asChild className="rounded-xl">
-        <a href="/measurements">Open 3D mannequin</a>
+        <Link href="/measurements">Open 3D mannequin</Link>
       </Button>
     </SurfaceShell>
   );
@@ -954,7 +955,7 @@ export function FabricCameraCalloutSurface() {
         grid, snap, scale, and rotation — the same skills scored in Stage 7.
       </p>
       <Button asChild className="rounded-xl">
-        <a href="/studio">Open Studio camera</a>
+        <Link href="/studio">Open Studio camera</Link>
       </Button>
     </SurfaceShell>
   );

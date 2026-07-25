@@ -20,8 +20,11 @@ const InteractiveMannequin = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="relative h-[50vh] min-h-[400px] w-full">
+      <div className="absolute inset-0 flex items-center justify-center">
         <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
+        <p className="relative text-xs font-medium tracking-wide text-muted-foreground">
+          Loading 3D studio…
+        </p>
       </div>
     ),
   },
@@ -142,13 +145,16 @@ export function MeasurementsView() {
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           className="relative overflow-hidden rounded-[1.75rem] border border-white/25 bg-gradient-to-b from-muted/50 via-card/40 to-muted/30 shadow-[0_22px_60px_-28px_rgba(15,23,28,0.42)] dark:border-white/10"
         >
-          <MeasurementMasterclassTour />
-          <FeatureErrorBoundary
-            title="3D mannequin failed"
-            description="WebGL may be unavailable. Retry or use the region chips below."
-          >
-            <InteractiveMannequin className="touch-none" />
-          </FeatureErrorBoundary>
+          {/* Explicit height so no ancestor flex context can collapse the canvas. */}
+          <div className="relative h-[60vh] max-h-[600px] min-h-[400px] w-full shrink-0 overflow-hidden bg-gradient-to-b from-card/70 via-muted/40 to-muted/60">
+            <MeasurementMasterclassTour />
+            <FeatureErrorBoundary
+              title="3D mannequin failed"
+              description="WebGL may be unavailable. Retry or use the region chips below."
+            >
+              <InteractiveMannequin className="touch-none" />
+            </FeatureErrorBoundary>
+          </div>
           <p className="border-t border-white/15 px-4 py-3 text-center text-[11px] text-muted-foreground">
             Drag to rotate · Scroll to zoom · Glowing bands invite a tap
           </p>

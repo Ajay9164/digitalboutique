@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
+  Calculator,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -10,62 +11,35 @@ import {
   Sparkles,
 } from "lucide-react";
 import {
-  CONSTRUCTION_STEPS,
-  type ConstructionStep,
-  type ConstructionStepId,
-} from "@/features/drafts/data/construction-steps";
+  FOCUS_TO_MASTERCLASS,
+  MARKING_MASTERCLASS_STEPS,
+  masterclassLineVisibility,
+  type MarkingMasterclassStep,
+} from "@/features/drafts/data/marking-masterclass";
 import {
   DEFAULT_DRAFTING_INPUTS,
   SAMPLE_BODY,
 } from "@/features/drafts/data/formulas";
 import { DraftBoard } from "@/features/drafts/components/draft-board";
-import {
-  buildDraftGeometry,
-  stepLineVisibility,
-} from "@/features/drafts/lib/draft-geometry";
+import { buildDraftGeometry } from "@/features/drafts/lib/draft-geometry";
+import { useDraftLearningStore } from "@/stores/draft-learning-store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/** Journey focus tokens → construction step ids */
-const FOCUS_TO_STEP: Record<string, ConstructionStepId> = {
-  neck: "neck",
-  shoulder: "shoulder",
-  armhole: "armhole",
-  bust: "bust-line",
-  waist: "waist-line",
-  princess: "darts",
-  darts: "darts",
-  side: "side-seam",
-  sa: "hem",
-};
-
-const BEGINNER_BLURBS: Partial<Record<ConstructionStepId, string>> = {
-  "center-line":
-    "Think of this as the fold of a book — everything mirrors from here.",
-  "bust-line":
-    "This is the fullest part of the chest. Later lines hang from this width.",
-  "waist-line":
-    "Where the blouse cinches. Compare it to the bust line to see dart size.",
-  neck: "A soft curve from shoulder to center front — never a sharp corner.",
-  shoulder: "Connects neck to the top of the armhole. Length + a small drop.",
-  armhole: "The sleeve opening. Curve gently — too tight and arms cannot move.",
-  "side-seam": "Joins front to back from underarm down to the hem.",
-  darts: "Two legs meeting at a tip — they shape flat paper into a 3D bust.",
-  hem: "The bottom edge. Keep it level so the blouse sits evenly.",
-};
-
-function resolveTutorialSteps(focusIds?: string[]): ConstructionStep[] {
-  if (!focusIds?.length) return CONSTRUCTION_STEPS;
-  const seen = new Set<ConstructionStepId>();
-  const ordered: ConstructionStep[] = [];
+function resolveMasterclassSteps(
+  focusIds?: string[],
+): MarkingMasterclassStep[] {
+  if (!focusIds?.length) return MARKING_MASTERCLASS_STEPS;
+  const seen = new Set<string>();
+  const ordered: MarkingMasterclassStep[] = [];
   for (const focus of focusIds) {
-    const id = FOCUS_TO_STEP[focus];
+    const id = FOCUS_TO_MASTERCLASS[focus];
     if (!id || seen.has(id)) continue;
     seen.add(id);
-    const step = CONSTRUCTION_STEPS.find((s) => s.id === id);
+    const step = MARKING_MASTERCLASS_STEPS.find((s) => s.id === id);
     if (step) ordered.push(step);
   }
-  return ordered.length > 0 ? ordered : CONSTRUCTION_STEPS;
+  return ordered.length > 0 ? ordered : MARKING_MASTERCLASS_STEPS;
 }
 
 type MarkingTutorialProps = {
@@ -77,7 +51,7 @@ type MarkingTutorialProps = {
 
 /**
  * Phase 3 — Animated Draft Marking Tutorial.
- * Premium grid board + pathLength draw-on + beginner stepper with glass cards.
+ * Digital cutting table + pathLength chalk draw-on + vertical LessonStepper.
  */
 export function MarkingTutorial({
   focusIds,
@@ -85,7 +59,8 @@ export function MarkingTutorial({
   embedded = false,
 }: MarkingTutorialProps) {
   const reduceMotion = useReducedMotion();
-  const steps = useMemo(() => resolveTutorialSteps(focusIds), [focusIds]);
+  const markStepComplete = useDraftLearningStore((s) => s.markStepComplete);
+  const steps = useMemo(() => resolveMasterclassSteps(focusIds), [focusIds]);
   const [stepIndex, setStepIndex] = useState(0);
 
   const geometry = useMemo(
@@ -94,18 +69,62 @@ export function MarkingTutorial({
   );
 
   const current = steps[Math.min(stepIndex, steps.length - 1)];
-  const globalIndex = CONSTRUCTION_STEPS.findIndex((s) => s.id === current?.id);
-  const visible = stepLineVisibility(Math.max(0, globalIndex));
+  const fullIndex = MARKING_MASTERCLASS_STEPS.findIndex(
+    (s) => s.id === current?.id,
+  );
+  const visible = masterclassLineVisibility(Math.max(0, fullIndex));
+
+  useEffect(() => {
+    if (!current) return;
+    for (const id of current.reveals) {
+      markStepComplete(id);
+    }
+  }, [current, markStepComplete]);
 
   const goNext = () =>
     setStepIndex((i) => Math.min(steps.length - 1, i + 1));
   const goPrev = () => setStepIndex((i) => Math.max(0, i - 1));
 
   const body = (
-    <div className={cn("space-y-4", className)}>
-      {/* Step chips */}
-      <nav aria-label="Marking tutorial steps" className="overflow-x-auto pb-0.5">
-        <ol className="flex min-w-max gap-1.5">
+    <div
+      className={cn(
+        "grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] lg:items-start lg:gap-6",
+        className,
+      )}
+    >
+      {/* —— DraftingBoard (top / left) —— */}
+      <section
+        aria-labelledby="drafting-board-heading"
+        className="space-y-3 lg:sticky lg:top-4"
+      >
+        <div className="flex items-center justify-between gap-2 px-0.5">
+          <div>
+            <p
+              id="drafting-board-heading"
+              className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+            >
+              Digital drafting paper
+            </p>
+            <p className="mt-0.5 text-sm font-medium tracking-tight">
+              Chalk lines draw as you advance
+            </p>
+          </div>
+          <p className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Step {stepIndex + 1}/{steps.length}
+          </p>
+        </div>
+
+        <DraftBoard
+          geometry={geometry}
+          visible={visible}
+          activeStep={current?.activeLine ?? "center-line"}
+          premiumGrid
+        />
+      </section>
+
+      {/* —— LessonStepper (bottom / right) —— */}
+      <section aria-label="Marking masterclass stepper" className="space-y-3">
+        <ol className="space-y-2.5">
           {steps.map((item, index) => {
             const active = index === stepIndex;
             const done = index < stepIndex;
@@ -116,116 +135,139 @@ export function MarkingTutorial({
                   onClick={() => setStepIndex(index)}
                   aria-current={active ? "step" : undefined}
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-wide ring-1 transition-colors",
+                    "glass-panel interactive-lift w-full rounded-2xl p-3.5 text-left transition-colors sm:p-4",
                     active
-                      ? "bg-primary text-primary-foreground ring-primary"
+                      ? "border-primary/35 ring-1 ring-primary/25"
                       : done
-                        ? "bg-primary/10 text-primary ring-primary/25"
-                        : "bg-card/80 text-muted-foreground ring-border/60 hover:text-foreground",
+                        ? "opacity-90"
+                        : "opacity-75 hover:opacity-100",
                   )}
                 >
-                  {done && !active ? (
-                    <CheckCircle2 className="size-3" aria-hidden />
-                  ) : (
-                    <span className="tabular-nums opacity-80">{index + 1}</span>
-                  )}
-                  {item.shortLabel}
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-[0_8px_18px_-10px_rgba(15,23,28,0.45)]"
+                          : done
+                            ? "bg-primary/15 text-primary"
+                            : "bg-muted text-muted-foreground",
+                      )}
+                      aria-hidden
+                    >
+                      {done && !active ? (
+                        <CheckCircle2 className="size-4" />
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold tracking-tight">
+                        {item.title.replace(/^\d+\.\s*/, "")}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] font-medium text-primary/90">
+                        {item.formula}
+                      </p>
+                    </div>
+                  </div>
                 </button>
               </li>
             );
           })}
         </ol>
-      </nav>
 
-      <DraftBoard
-        key={current?.id}
-        geometry={geometry}
-        visible={visible}
-        activeStep={current?.id ?? "center-line"}
-        premiumGrid
-      />
+        <AnimatePresence mode="wait">
+          {current ? (
+            <motion.article
+              key={current.id}
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="glass-panel space-y-4 rounded-3xl p-4 sm:p-5"
+              aria-live="polite"
+            >
+              <header className="space-y-1.5">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                  Lesson {stepIndex + 1} of {steps.length}
+                </p>
+                <h3 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
+                  {current.title}
+                </h3>
+              </header>
 
-      <AnimatePresence mode="wait">
-        {current ? (
-          <motion.article
-            key={current.id}
-            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="glass-panel space-y-3 rounded-3xl p-4 sm:p-5"
-            aria-live="polite"
-          >
-            <header className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-                Step {stepIndex + 1} of {steps.length}
-              </p>
-              <h3 className="font-display text-xl font-semibold tracking-tight sm:text-2xl">
-                {current.label}
-              </h3>
-              <p className="text-sm font-medium text-primary/90">
-                {current.formulaHint}
-              </p>
-            </header>
+              <section className="space-y-1.5 rounded-2xl bg-primary/8 px-3.5 py-3 ring-1 ring-primary/15">
+                <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                  <Calculator className="size-3.5" aria-hidden />
+                  The chalk math
+                </h4>
+                <p className="font-mono text-sm font-semibold text-foreground">
+                  {current.formula}
+                </p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {current.mathExplainer}
+                </p>
+              </section>
 
-            <section className="space-y-1.5">
-              <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <Sparkles className="size-3.5 text-primary" aria-hidden />
-                Why this mark exists
-              </h4>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {BEGINNER_BLURBS[current.id] ?? current.whyItExists}
-              </p>
-            </section>
+              <section className="space-y-1.5">
+                <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Sparkles className="size-3.5 text-primary" aria-hidden />
+                  Why it matters
+                </h4>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {current.whyItMatters}
+                </p>
+              </section>
 
-            <section className="space-y-1.5">
-              <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <ListOrdered className="size-3.5 text-primary" aria-hidden />
-                How to draw it
-              </h4>
-              <ol className="list-decimal space-y-1 pl-5 text-sm leading-relaxed text-muted-foreground marker:font-semibold marker:text-primary">
-                {current.howItIsDrawn.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ol>
-            </section>
+              <section className="space-y-1.5">
+                <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <ListOrdered className="size-3.5 text-primary" aria-hidden />
+                  How to draw it
+                </h4>
+                <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-muted-foreground marker:font-semibold marker:text-primary">
+                  {current.howToDraw.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ol>
+              </section>
 
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="rounded-xl"
-                disabled={stepIndex === 0}
-                onClick={goPrev}
-              >
-                <ChevronLeft aria-hidden />
-                Back
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="rounded-xl"
-                disabled={stepIndex >= steps.length - 1}
-                onClick={goNext}
-              >
-                {stepIndex >= steps.length - 1 ? "Complete" : "Next Step"}
-                {stepIndex >= steps.length - 1 ? (
-                  <CheckCircle2 aria-hidden />
-                ) : (
-                  <ChevronRight aria-hidden />
-                )}
-              </Button>
-            </div>
-          </motion.article>
-        ) : null}
-      </AnimatePresence>
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                  disabled={stepIndex === 0}
+                  onClick={goPrev}
+                >
+                  <ChevronLeft aria-hidden />
+                  Previous Step
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="rounded-xl"
+                  disabled={stepIndex >= steps.length - 1}
+                  onClick={goNext}
+                >
+                  {stepIndex >= steps.length - 1 ? "Complete" : "Next Step"}
+                  {stepIndex >= steps.length - 1 ? (
+                    <CheckCircle2 aria-hidden />
+                  ) : (
+                    <ChevronRight aria-hidden />
+                  )}
+                </Button>
+              </div>
+            </motion.article>
+          ) : null}
+        </AnimatePresence>
+      </section>
     </div>
   );
 
   if (embedded) {
     return (
-      <div className="glass-panel space-y-3 rounded-3xl p-4">
+      <div className="glass-panel space-y-4 rounded-3xl p-4 sm:p-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           Interactive · Animated draft marking
         </p>

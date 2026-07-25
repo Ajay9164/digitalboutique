@@ -40,7 +40,7 @@ export function Mannequin2DFallback({
   return (
     <div
       className={cn(
-        "relative flex h-[50vh] min-h-[400px] w-full flex-col items-center justify-center bg-gradient-to-b from-muted/50 via-card/40 to-muted/30",
+        "relative flex h-full min-h-[400px] w-full flex-col items-center justify-center bg-gradient-to-b from-muted/50 via-card/40 to-muted/30",
         className,
       )}
       role="img"

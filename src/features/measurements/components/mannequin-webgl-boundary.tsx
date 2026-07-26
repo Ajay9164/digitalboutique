@@ -28,8 +28,16 @@ export class MannequinWebGLBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const offline =
+        typeof navigator !== "undefined" && navigator.onLine === false;
       return (
-        <Mannequin2DFallback message="3D View Unavailable — Using 2D Mode" />
+        <Mannequin2DFallback
+          message={
+            offline
+              ? "Offline Mode — Using 2D Mannequin"
+              : "3D View Unavailable — Using 2D Mode"
+          }
+        />
       );
     }
     return this.props.children;

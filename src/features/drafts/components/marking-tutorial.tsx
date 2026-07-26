@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import {
@@ -24,6 +24,7 @@ import {
 import { DraftBoard } from "@/features/drafts/components/draft-board";
 import { buildDraftGeometry } from "@/features/drafts/lib/draft-geometry";
 import { useDraftLearningStore } from "@/stores/draft-learning-store";
+import { useMasteryStore } from "@/stores/mastery-store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +82,20 @@ export function MarkingTutorial({
       markStepComplete(id);
     }
   }, [current, markStepComplete]);
+
+  const masteryAwarded = useRef(false);
+  useEffect(() => {
+    if (masteryAwarded.current) return;
+    if (stepIndex < steps.length - 1) return;
+    masteryAwarded.current = true;
+    void useMasteryStore.getState().awardModuleComplete({
+      title: "Marking masterclass complete",
+      detail:
+        "You drew the full blouse block line by line — +50 Tailor Points earned.",
+      refId: current?.id ?? "marking-masterclass",
+      xp: 50,
+    });
+  }, [stepIndex, steps.length, current?.id]);
 
   const goNext = () =>
     setStepIndex((i) => Math.min(steps.length - 1, i + 1));

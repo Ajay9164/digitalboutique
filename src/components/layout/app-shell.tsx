@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { DeveloperFooter } from "@/components/layout/developer-footer";
 import { FloatingActionButton } from "@/components/layout/floating-action-button";
 import { TopHeader } from "@/components/layout/top-header";
+import { MasteryCelebration } from "@/components/learning/mastery-celebration";
 
 const PwaInstallBanner = dynamic(
   () =>
@@ -39,6 +40,7 @@ export function AppShell({ children }: AppShellProps) {
       </main>
 
       <PwaInstallBanner />
+      <MasteryCelebration />
       <FloatingActionButton />
       <DeveloperFooter />
       <BottomNav />

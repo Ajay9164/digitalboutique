@@ -24,6 +24,7 @@ import {
   recordActivity,
   recordPracticeAttempt,
 } from "@/features/learning/lib/ecosystem";
+import { useMasteryStore } from "@/stores/mastery-store";
 
 export type DraftLearningMode = "lesson" | "practice" | "engine";
 
@@ -247,7 +248,16 @@ export const useDraftLearningStore = create<DraftLearningState>((set, get) => ({
       lessonMaxStep: get().lessonMaxStep,
     });
 
-    void recordPracticeAttempt({ score: correct, total });
+    void recordPracticeAttempt({ score: correct, total }).then(() => {
+      void useMasteryStore.getState().awardModuleComplete({
+        title: perfect ? "Perfect practice draft" : "Practice draft complete",
+        detail: perfect
+          ? "Every formula landed — +50 Tailor Points earned."
+          : `Scored ${correct}/${total}. +50 Tailor Points for finishing the round.`,
+        refId: "practice-draft",
+        xp: 50,
+      });
+    });
   },
 
   revealPractice: () => {

@@ -3,7 +3,6 @@ import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import {
   CacheFirst,
   NetworkFirst,
-  NetworkOnly,
   Serwist,
 } from "serwist";
 
@@ -15,12 +14,21 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+function isRscPayload(request: Request, url: URL): boolean {
+  if (request.headers.get("RSC") === "1") return true;
+  if (request.headers.get("Next-Router-Prefetch") === "1") return true;
+  if (request.headers.get("Next-Router-State-Tree") != null) return true;
+  if (url.pathname.endsWith(".rsc")) return true;
+  if (url.searchParams.has("_rsc")) return true;
+  return url.pathname.startsWith("/_next/data/");
+}
+
 /**
- * App Router + Serwist:
- * - Navigation documents: NetworkFirst with offline fallback (never "no-response")
- * - Next.js RSC / flight fetches: NetworkOnly (avoid stale shell mismatches)
- * - Fonts + static media: CacheFirst for instant offline open
- * - Everything else: Serwist defaultCache
+ * App Router + Serwist (offline-first atelier):
+ * - Navigations: NetworkFirst → /~offline
+ * - RSC / flight payloads: NetworkFirst (fast timeout) with cache fallback
+ * - `/_next/static/*` JS/CSS/chunks: aggressive CacheFirst
+ * - Fonts / media: CacheFirst
  */
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -32,17 +40,17 @@ const serwist = new Serwist({
       matcher: ({ request }) => request.mode === "navigate",
       handler: new NetworkFirst({
         cacheName: "tailor-pages",
-        networkTimeoutSeconds: 4,
+        networkTimeoutSeconds: 3,
         plugins: [
           {
             handlerDidError: async () => {
               const offline = await caches.match("/~offline");
               return (
                 offline ??
-                new Response("You are offline.", {
+                new Response(null, {
                   status: 503,
                   statusText: "Offline",
-                  headers: { "Content-Type": "text/plain; charset=utf-8" },
+                  headers: { "Cache-Control": "no-store" },
                 })
               );
             },
@@ -51,33 +59,40 @@ const serwist = new Serwist({
       }),
     },
     {
-      matcher: ({ request, url }) =>
-        request.headers.get("RSC") === "1" ||
-        request.headers.get("Next-Router-Prefetch") === "1" ||
-        url.pathname.startsWith("/_next/data/"),
-      // Always return a Response so the SW never emits FetchEvent "no-response".
-      handler: new NetworkOnly({
+      // App Router RSC / flight payloads — must be cacheable for offline nav
+      matcher: ({ request, url }) => isRscPayload(request, url),
+      handler: new NetworkFirst({
+        cacheName: "tailor-rsc",
+        networkTimeoutSeconds: 2,
         plugins: [
           {
-            handlerDidError: async () =>
-              new Response(null, {
-                status: 503,
-                statusText: "Offline",
-                headers: { "Cache-Control": "no-store" },
-              }),
+            cacheWillUpdate: async ({ response }) =>
+              response && response.status === 200 ? response : null,
+            handlerDidError: async ({ request }) => {
+              const cached = await caches.match(request, {
+                cacheName: "tailor-rsc",
+                ignoreVary: true,
+              });
+              if (cached) return cached;
+              const offline = await caches.match("/~offline");
+              return (
+                offline ??
+                new Response(null, {
+                  status: 503,
+                  statusText: "Offline",
+                  headers: { "Cache-Control": "no-store" },
+                })
+              );
+            },
           },
         ],
       }),
     },
     {
-      // Google Fonts CSS + Next font files + local webfonts
-      matcher: ({ request, url }) =>
-        request.destination === "font" ||
-        url.hostname === "fonts.gstatic.com" ||
-        url.hostname === "fonts.googleapis.com" ||
-        url.pathname.startsWith("/_next/static/media/"),
+      // Aggressively cache every Next static chunk (JS, CSS, media, maps)
+      matcher: ({ url }) => url.pathname.startsWith("/_next/static/"),
       handler: new CacheFirst({
-        cacheName: "tailor-fonts",
+        cacheName: "tailor-static",
         plugins: [
           {
             cacheWillUpdate: async ({ response }) =>
@@ -87,14 +102,12 @@ const serwist = new Serwist({
       }),
     },
     {
-      // App shell CSS/JS chunks — keep offline after first visit
       matcher: ({ request, url }) =>
-        url.pathname.startsWith("/_next/static/") &&
-        (request.destination === "script" ||
-          request.destination === "style" ||
-          request.destination === "worker"),
+        request.destination === "font" ||
+        url.hostname === "fonts.gstatic.com" ||
+        url.hostname === "fonts.googleapis.com",
       handler: new CacheFirst({
-        cacheName: "tailor-static",
+        cacheName: "tailor-fonts",
         plugins: [
           {
             cacheWillUpdate: async ({ response }) =>

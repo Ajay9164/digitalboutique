@@ -5,7 +5,7 @@ import {
   MEASUREMENT_MAP,
   type MeasurementId,
 } from "@/features/measurements/data/measurements";
-import { recordActivity } from "@/features/learning/lib/ecosystem";
+import { useMasteryStore } from "@/stores/mastery-store";
 
 export type MeasurementUnit = "in" | "cm";
 
@@ -71,16 +71,16 @@ export const useMeasurementStore = create<MeasurementState>((set, get) => ({
     if (learnedIds.includes(id)) {
       set({ learnedIds: learnedIds.filter((entry) => entry !== id) });
       quietDbWrite(() => db.learning.delete(id));
+      void useMasteryStore.getState().refresh();
     } else {
       set({ learnedIds: [...learnedIds, id] });
       quietDbWrite(() => db.learning.put({ id, learnedAt: new Date() }));
       const label = MEASUREMENT_MAP[id]?.label ?? id;
-      void recordActivity({
-        type: "measurement_learned",
-        title: `Learned ${label}`,
-        detail: "Measurement lesson marked complete.",
+      void useMasteryStore.getState().awardModuleComplete({
+        title: `${label} mastered`,
+        detail: "Measurement masterclass complete — +50 Tailor Points earned.",
         refId: id,
-        xp: 15,
+        xp: 50,
       });
     }
   },

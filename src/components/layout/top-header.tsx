@@ -7,6 +7,9 @@ import { useTheme } from "next-themes";
 import { APP_NAME } from "@/lib/constants";
 import { useMounted } from "@/hooks/use-mounted";
 import { useUiStore } from "@/stores/ui-store";
+import { MasteryProgressRing } from "@/components/learning/mastery-progress-ring";
+import { useMasteryStore } from "@/stores/mastery-store";
+import { resolveMastery } from "@/features/learning/lib/mastery";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +27,9 @@ export function TopHeader() {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
+  const totalXp = useMasteryStore((s) => s.totalXp);
+  const modulesCompleted = useMasteryStore((s) => s.modulesCompleted);
+  const mastery = resolveMastery(totalXp, modulesCompleted);
   const pageTitle = useUiStore((state) => state.pageTitle);
   const sectionTitle =
     pageTitle ??
@@ -43,7 +49,7 @@ export function TopHeader() {
         "supports-[backdrop-filter]:bg-background/55",
       )}
     >
-      <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4 sm:h-16 sm:px-6">
+      <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
         <div className="min-w-0">
           <Link
             href="/"
@@ -57,24 +63,42 @@ export function TopHeader() {
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-10 rounded-full bg-muted/50 ring-1 ring-border/60"
-          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-        >
-          {mounted ? (
-            isDark ? (
-              <Sun className="size-4" aria-hidden="true" />
+        <div className="flex shrink-0 items-center gap-2.5">
+          <Link
+            href="/progress"
+            className="interactive-lift group flex items-center gap-2 rounded-full border border-white/15 bg-background/50 py-1 pl-1 pr-2.5 backdrop-blur-md dark:border-white/10"
+            aria-label={`Mastery Level ${mastery.level}: ${mastery.title}`}
+          >
+            <MasteryProgressRing size={34} />
+            <span className="hidden min-w-0 flex-col leading-tight sm:flex">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Level {mastery.level}
+              </span>
+              <span className="max-w-[7.5rem] truncate text-[11px] font-semibold text-foreground">
+                {mastery.title}
+              </span>
+            </span>
+          </Link>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-10 rounded-full bg-muted/50 ring-1 ring-border/60"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+          >
+            {mounted ? (
+              isDark ? (
+                <Sun className="size-4" aria-hidden="true" />
+              ) : (
+                <Moon className="size-4" aria-hidden="true" />
+              )
             ) : (
-              <Moon className="size-4" aria-hidden="true" />
-            )
-          ) : (
-            <span className="size-4" aria-hidden="true" />
-          )}
-        </Button>
+              <span className="size-4" aria-hidden="true" />
+            )}
+          </Button>
+        </div>
       </div>
     </header>
   );

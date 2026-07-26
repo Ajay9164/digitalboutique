@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   ContactShadows,
-  Environment,
   Line,
   OrbitControls,
 } from "@react-three/drei";
@@ -376,16 +375,17 @@ function RegionOverlays({ reduceMotion }: { reduceMotion: boolean }) {
 function StudioLighting() {
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <hemisphereLight color="#f5f1ea" groundColor="#2a3338" intensity={0.45} />
+      <ambientLight intensity={0.62} />
+      <hemisphereLight color="#f5f1ea" groundColor="#2a3338" intensity={0.55} />
       <directionalLight
         position={[2.4, 3.4, 2.2]}
-        intensity={1.15}
+        intensity={1.25}
         castShadow
         shadow-mapSize={[512, 512]}
         shadow-bias={-0.0002}
       />
-      <directionalLight position={[-2.2, 1.8, 1.4]} intensity={0.4} />
+      <directionalLight position={[-2.2, 1.8, 1.4]} intensity={0.5} />
+      <directionalLight position={[0.2, 2.8, -2.4]} intensity={0.28} />
     </>
   );
 }
@@ -444,9 +444,7 @@ function MannequinCanvas({
     >
       <WebGLContextGuard onContextLost={onContextLost} />
       <StudioLighting />
-      <Suspense fallback={null}>
-        <Environment preset="apartment" environmentIntensity={0.35} />
-      </Suspense>
+      {/* No Environment / HDR — those fetch remote assets and break offline. */}
       <MannequinBody />
       <RegionOverlays reduceMotion={!!reduceMotion} />
       <ContactShadows
@@ -479,8 +477,19 @@ function MannequinCanvas({
 export default function InteractiveMannequin({
   className,
 }: InteractiveMannequinProps) {
-  const [use2D, setUse2D] = useState(false);
+  const [use2D, setUse2D] = useState(
+    () => typeof navigator !== "undefined" && navigator.onLine === false,
+  );
   const onContextLost = useCallback(() => setUse2D(true), []);
+
+  useEffect(() => {
+    const goOffline = () => setUse2D(true);
+    window.addEventListener("offline", goOffline);
+    return () => window.removeEventListener("offline", goOffline);
+  }, []);
+
+  const offline =
+    typeof navigator !== "undefined" && navigator.onLine === false;
 
   return (
     <div
@@ -492,7 +501,13 @@ export default function InteractiveMannequin({
       aria-label="Interactive mannequin. Tap a glowing region to open its measurement lesson."
     >
       {use2D ? (
-        <Mannequin2DFallback message="3D View Unavailable — Using 2D Mode" />
+        <Mannequin2DFallback
+          message={
+            offline
+              ? "Offline Mode — Using 2D Mannequin"
+              : "3D View Unavailable — Using 2D Mode"
+          }
+        />
       ) : (
         <MannequinWebGLBoundary>
           <div className="relative h-full min-h-[400px] w-full">

@@ -37,7 +37,7 @@ export function MeasurementPicker() {
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ring-1 transition-colors",
                       active
-                        ? "bg-primary text-primary-foreground ring-primary shadow-sm"
+                        ? "neon-measure bg-[color-mix(in_oklch,var(--neon)_18%,black)] text-neon ring-neon/60"
                         : "bg-card/70 text-foreground ring-border/70 hover:bg-muted",
                     )}
                   >
@@ -45,7 +45,7 @@ export function MeasurementPicker() {
                       <CheckCircle2
                         className={cn(
                           "size-3.5",
-                          active ? "text-primary-foreground" : "text-primary",
+                          active ? "text-neon" : "text-primary",
                         )}
                         aria-label="Learned"
                       />

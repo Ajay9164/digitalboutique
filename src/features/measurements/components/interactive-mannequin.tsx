@@ -20,67 +20,60 @@ import {
 } from "@/features/measurements/components/mannequin-regions";
 import { Mannequin2DFallback } from "@/features/measurements/components/mannequin-2d-fallback";
 import { MannequinWebGLBoundary } from "@/features/measurements/components/mannequin-webgl-boundary";
+import { buildMorphedProfile } from "@/features/measurements/lib/mannequin-morph";
+import { useFabricTexture } from "@/features/measurements/hooks/use-fabric-texture";
 import { useMeasurementStore } from "@/stores/measurement-store";
+import { useStudioStore } from "@/stores/studio-store";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 
-/** Soft matte-silk / marble dress-form palette */
-const FORM_COLOR = "#EDE6DC";
-const STAND_COLOR = "#2A2E34";
-const REGION_IDLE = "#6FA89E";
-const REGION_HOVER = "#4FB3A1";
-const REGION_ACTIVE = "#2DD4BF";
+/** Luxury dress-form + cyberpunk measurement neon */
+const FORM_COLOR = "#E8E0D4";
+const STAND_COLOR = "#0A0C12";
+const REGION_IDLE = "#3D6B75";
+const REGION_HOVER = "#4FD6E8";
+const REGION_ACTIVE = "#5EFFF0";
 
 /* -------------------------------------------------------------------------- */
-/* Mannequin body — pure geometry. Swap this component for a GLTF scene later */
-/* (e.g. useGLTF) without touching anything below it.                         */
+/* Mannequin body — parametric lathe + optional Studio fabric drape texture   */
 /* -------------------------------------------------------------------------- */
 
 function SilkMaterial({
   color = FORM_COLOR,
   roughness = 0.38,
   metalness = 0.06,
+  map = null,
 }: {
   color?: string;
   roughness?: number;
   metalness?: number;
+  map?: THREE.Texture | null;
 }) {
-  // Lighter PhysicalMaterial for integrated GPUs — silk look without sheen/high clearcoat.
+  // When draped, soften clearcoat so print detail stays readable.
+  const draped = Boolean(map);
   return (
     <meshPhysicalMaterial
-      color={color}
-      roughness={roughness}
-      metalness={metalness}
-      clearcoat={0.55}
-      clearcoatRoughness={0.45}
+      color={draped ? "#ffffff" : color}
+      map={map ?? undefined}
+      roughness={draped ? 0.55 : roughness}
+      metalness={draped ? 0.02 : metalness}
+      clearcoat={draped ? 0.25 : 0.55}
+      clearcoatRoughness={draped ? 0.6 : 0.45}
       envMapIntensity={0.45}
     />
   );
 }
 
-function MannequinBody() {
+function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
+  const morph = useMeasurementStore((s) => s.bodyMorph);
+
   const torsoGeometry = useMemo(() => {
-    const profile: Array<[number, number]> = [
-      [0.001, 0.64],
-      [0.09, 0.66],
-      [0.155, 0.72],
-      [0.175, 0.88],
-      [0.14, 0.98],
-      [0.115, 1.06],
-      [0.125, 1.14],
-      [0.135, 1.22],
-      [0.175, 1.32],
-      [0.145, 1.42],
-      [0.16, 1.5],
-      [0.1, 1.54],
-      [0.055, 1.58],
-      [0.045, 1.66],
-    ];
+    const profile = buildMorphedProfile(morph);
     return new THREE.LatheGeometry(
       profile.map(([x, y]) => new THREE.Vector2(x, y)),
       48,
     );
-  }, []);
+  }, [morph]);
 
   useEffect(() => {
     return () => {
@@ -88,16 +81,24 @@ function MannequinBody() {
     };
   }, [torsoGeometry]);
 
+  const bustRadius = 0.075 * morph.bust;
+  const bustX = 0.09 * Math.sqrt(morph.bust);
+
   return (
     <group>
       <mesh geometry={torsoGeometry} castShadow receiveShadow>
-        <SilkMaterial />
+        <SilkMaterial map={fabricMap} />
       </mesh>
 
-      {[-0.09, 0.09].map((x) => (
-        <mesh key={x} position={[x, 1.32, 0.1]} castShadow>
-          <sphereGeometry args={[0.075, 24, 24]} />
-          <SilkMaterial />
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[bustX * side, 1.32, 0.1]}
+          castShadow
+          scale={[1, 1, 0.92]}
+        >
+          <sphereGeometry args={[bustRadius, 24, 24]} />
+          <SilkMaterial map={fabricMap} />
         </mesh>
       ))}
 
@@ -115,7 +116,11 @@ function MannequinBody() {
       {[1, -1].map((side) => (
         <group
           key={side}
-          position={[ARM_PIVOT[0] * side, ARM_PIVOT[1], ARM_PIVOT[2]]}
+          position={[
+            ARM_PIVOT[0] * side * (0.92 + morph.bust * 0.08),
+            ARM_PIVOT[1],
+            ARM_PIVOT[2],
+          ]}
           rotation={[0, 0, ARM_TILT * side]}
         >
           <mesh position={[0, -0.26, 0]} castShadow>
@@ -204,20 +209,20 @@ function useInvitePulse(selected: boolean, reduceMotion: boolean) {
     if (reduceMotion) {
       group.scale.setScalar(1);
       if (materialRef.current) {
-        materialRef.current.emissiveIntensity = selected ? 0.7 : 0.35;
+        materialRef.current.emissiveIntensity = selected ? 1.35 : 0.35;
       }
       return;
     }
 
-    const speed = selected ? 4.2 : 1.35;
-    const amp = selected ? 0.045 : 0.07;
+    const speed = selected ? 5.2 : 1.35;
+    const amp = selected ? 0.055 : 0.07;
     const wave = Math.sin(elapsedRef.current * speed);
     const target = 1 + wave * amp;
     group.scale.setScalar(THREE.MathUtils.lerp(group.scale.x, target, 0.14));
 
     if (materialRef.current) {
-      const base = selected ? 0.85 : 0.28;
-      const glowAmp = selected ? 0.25 : 0.42;
+      const base = selected ? 1.15 : 0.28;
+      const glowAmp = selected ? 0.55 : 0.42;
       materialRef.current.emissiveIntensity =
         base + (wave * 0.5 + 0.5) * glowAmp;
     }
@@ -239,7 +244,7 @@ function RingRegion({ id, anchor, reduceMotion }: RegionProps) {
           ref={materialRef}
           color={color}
           emissive={color}
-          emissiveIntensity={selected ? 0.9 : 0.35}
+          emissiveIntensity={selected ? 1.4 : 0.35}
           roughness={0.35}
           transparent
           opacity={opacity}
@@ -291,7 +296,7 @@ function LineRegion({ id, anchor, reduceMotion }: RegionProps) {
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={selected ? 0.9 : 0.4}
+            emissiveIntensity={selected ? 1.35 : 0.4}
             transparent
             opacity={opacity}
           />
@@ -318,7 +323,7 @@ function PointRegion({ id, anchor, reduceMotion }: RegionProps) {
           ref={materialRef}
           color={color}
           emissive={color}
-          emissiveIntensity={selected ? 1 : 0.4}
+          emissiveIntensity={selected ? 1.4 : 0.4}
           roughness={0.3}
           transparent
           opacity={opacity}
@@ -375,17 +380,22 @@ function RegionOverlays({ reduceMotion }: { reduceMotion: boolean }) {
 function StudioLighting() {
   return (
     <>
-      <ambientLight intensity={0.62} />
-      <hemisphereLight color="#f5f1ea" groundColor="#2a3338" intensity={0.55} />
+      <ambientLight intensity={0.42} />
+      <hemisphereLight color="#F2E6C8" groundColor="#0A1020" intensity={0.48} />
       <directionalLight
         position={[2.4, 3.4, 2.2]}
-        intensity={1.25}
+        intensity={1.05}
+        color="#FFE6A8"
         castShadow
         shadow-mapSize={[512, 512]}
         shadow-bias={-0.0002}
       />
-      <directionalLight position={[-2.2, 1.8, 1.4]} intensity={0.5} />
-      <directionalLight position={[0.2, 2.8, -2.4]} intensity={0.28} />
+      <directionalLight
+        position={[-2.4, 1.6, 1.2]}
+        intensity={0.55}
+        color="#5EFFF0"
+      />
+      <directionalLight position={[0.2, 2.8, -2.4]} intensity={0.22} color="#8AB4FF" />
     </>
   );
 }
@@ -412,6 +422,33 @@ function WebGLContextGuard({ onContextLost }: { onContextLost: () => void }) {
   return null;
 }
 
+/**
+ * Tear down the WebGL animation loop on unmount to avoid GPU leaks
+ * when leaving Measurements (R3F Canvas remounts on return).
+ * Avoid WEBGL_lose_context here — it races with contextlost → sticky 2D fallback.
+ */
+function WebGLLifecycleCleanup() {
+  const gl = useThree((s) => s.gl);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = "auto";
+      try {
+        gl.setAnimationLoop(null);
+      } catch {
+        // ignore
+      }
+      try {
+        gl.dispose();
+      } catch {
+        // ignore
+      }
+    };
+  }, [gl]);
+
+  return null;
+}
+
 function MannequinCanvas({
   onContextLost,
 }: {
@@ -419,6 +456,19 @@ function MannequinCanvas({
 }) {
   const select = useMeasurementStore((s) => s.select);
   const reduceMotion = useReducedMotion();
+  const fabricDrapeEnabled = useMeasurementStore((s) => s.fabricDrapeEnabled);
+  const fabricPhotoId = useMeasurementStore((s) => s.fabricPhotoId);
+  const photos = useStudioStore((s) => s.photos);
+  const activePhotoId = useStudioStore((s) => s.activePhotoId);
+
+  const drapePhoto = useMemo(() => {
+    if (!fabricDrapeEnabled) return null;
+    const id = fabricPhotoId ?? activePhotoId;
+    if (!id) return null;
+    return photos.find((p) => p.id === id) ?? null;
+  }, [fabricDrapeEnabled, fabricPhotoId, activePhotoId, photos]);
+
+  const fabricMap = useFabricTexture(drapePhoto?.displayUrl ?? null);
 
   return (
     <Canvas
@@ -443,9 +493,10 @@ function MannequinCanvas({
       onPointerMissed={() => select(null)}
     >
       <WebGLContextGuard onContextLost={onContextLost} />
+      <WebGLLifecycleCleanup />
       <StudioLighting />
       {/* No Environment / HDR — those fetch remote assets and break offline. */}
-      <MannequinBody />
+      <MannequinBody fabricMap={fabricMap} />
       <RegionOverlays reduceMotion={!!reduceMotion} />
       <ContactShadows
         position={[0, 0.001, 0]}
@@ -477,19 +528,30 @@ function MannequinCanvas({
 export default function InteractiveMannequin({
   className,
 }: InteractiveMannequinProps) {
-  const [use2D, setUse2D] = useState(
-    () => typeof navigator !== "undefined" && navigator.onLine === false,
-  );
+  // Start SSR/hydration-safe; sync online status after mount only.
+  const [use2D, setUse2D] = useState(false);
+  const [offline, setOffline] = useState(false);
   const onContextLost = useCallback(() => setUse2D(true), []);
 
   useEffect(() => {
-    const goOffline = () => setUse2D(true);
-    window.addEventListener("offline", goOffline);
-    return () => window.removeEventListener("offline", goOffline);
-  }, []);
+    const applyOffline = () => {
+      setOffline(true);
+      setUse2D(true);
+    };
+    const applyOnline = () => setOffline(false);
 
-  const offline =
-    typeof navigator !== "undefined" && navigator.onLine === false;
+    if (!navigator.onLine) {
+      applyOffline();
+    }
+
+    window.addEventListener("offline", applyOffline);
+    window.addEventListener("online", applyOnline);
+    return () => {
+      window.removeEventListener("offline", applyOffline);
+      window.removeEventListener("online", applyOnline);
+      document.body.style.cursor = "auto";
+    };
+  }, []);
 
   return (
     <div

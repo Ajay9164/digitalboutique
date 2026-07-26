@@ -1,5 +1,5 @@
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
+import type { PrecacheEntry, SerwistGlobalConfig, SerwistPlugin } from "serwist";
 import {
   CacheFirst,
   NetworkFirst,
@@ -13,6 +13,69 @@ declare global {
 }
 
 declare const self: ServiceWorkerGlobalScope;
+
+/** Build artifacts that commonly 404 during SW install (Next App Router). */
+const SKIP_PRECACHE =
+  /(dynamic-css-manifest|react-loadable-manifest|(app-)?build-manifest)\.json$|\.map$/i;
+
+const SKIP_HEADER = "X-Serwist-Precache-Skip";
+
+function sanitizePrecacheEntries(
+  entries: (PrecacheEntry | string)[] | undefined,
+): (PrecacheEntry | string)[] {
+  if (!entries?.length) return [];
+  return entries.filter((entry) => {
+    const url = typeof entry === "string" ? entry : entry.url;
+    if (!url) return false;
+    return !SKIP_PRECACHE.test(url);
+  });
+}
+
+/**
+ * Soft-fail missing precache URLs so one 404 chunk cannot abort SW install
+ * (`Uncaught (in promise) bad-precaching-response`).
+ */
+const resilientPrecachePlugin: SerwistPlugin = {
+  fetchDidSucceed: async ({ response, request }) => {
+    if (response.ok) return response;
+    console.warn(
+      "[serwist] Skipping non-OK precache response:",
+      request.url,
+      response.status,
+    );
+    return new Response("", {
+      status: 200,
+      statusText: "OK",
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        [SKIP_HEADER]: "1",
+      },
+    });
+  },
+  handlerDidError: async ({ request, error }) => {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.warn(
+      "[serwist] Skipping failed precache entry:",
+      request.url,
+      detail,
+    );
+    return new Response("", {
+      status: 200,
+      statusText: "OK",
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        [SKIP_HEADER]: "1",
+      },
+    });
+  },
+  cacheWillUpdate: async ({ response }) => {
+    if (!response || response.status !== 200) return null;
+    if (response.headers.get(SKIP_HEADER) === "1") return null;
+    return response;
+  },
+};
 
 function isRscPayload(request: Request, url: URL): boolean {
   if (request.headers.get("RSC") === "1") return true;
@@ -31,10 +94,14 @@ function isRscPayload(request: Request, url: URL): boolean {
  * - Fonts / media: CacheFirst
  */
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
+  precacheEntries: sanitizePrecacheEntries(self.__SW_MANIFEST),
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
+  precacheOptions: {
+    cleanupOutdatedCaches: true,
+    plugins: [resilientPrecachePlugin],
+  },
   runtimeCaching: [
     {
       matcher: ({ request }) => request.mode === "navigate",

@@ -8,6 +8,7 @@ import { MEASUREMENTS } from "@/features/measurements/data/measurements";
 import { LearningCard } from "@/features/measurements/components/learning-card";
 import { MeasurementPicker } from "@/features/measurements/components/measurement-picker";
 import { MeasurementMasterclassTour } from "@/features/measurements/components/measurement-masterclass-tour";
+import { FittingRoomControls } from "@/features/measurements/components/fitting-room-controls";
 import { UnitToggle } from "@/features/measurements/components/unit-toggle";
 import { PageHeader } from "@/components/shared/page-header";
 import { FeatureErrorBoundary } from "@/components/shared/feature-error-boundary";
@@ -143,10 +144,10 @@ export function MeasurementsView() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="relative overflow-hidden rounded-[1.75rem] border border-white/25 bg-gradient-to-b from-muted/50 via-card/40 to-muted/30 shadow-[0_22px_60px_-28px_rgba(15,23,28,0.42)] dark:border-white/10"
+          className="relative overflow-hidden rounded-[1.75rem] border border-champagne/20 bg-gradient-to-b from-card via-navy/40 to-card shadow-[0_22px_60px_-28px_rgba(0,0,0,0.65)]"
         >
           {/* Explicit height so no ancestor flex context can collapse the canvas. */}
-          <div className="relative h-[60vh] max-h-[600px] min-h-[400px] w-full shrink-0 overflow-hidden bg-gradient-to-b from-card/70 via-muted/40 to-muted/60">
+          <div className="relative h-[60vh] max-h-[600px] min-h-[400px] w-full shrink-0 overflow-hidden bg-[radial-gradient(ellipse_at_50%_20%,color-mix(in_oklch,var(--neon)_8%,transparent),transparent_55%),linear-gradient(180deg,oklch(0.12_0.03_255),oklch(0.08_0.02_260))]">
             <MeasurementMasterclassTour />
             <FeatureErrorBoundary
               title="3D mannequin failed"
@@ -155,10 +156,12 @@ export function MeasurementsView() {
               <InteractiveMannequin className="absolute inset-0 touch-none" />
             </FeatureErrorBoundary>
           </div>
-          <p className="border-t border-white/15 px-4 py-3 text-center text-[11px] text-muted-foreground">
-            Drag to rotate · Scroll to zoom · Glowing bands invite a tap
+          <p className="border-t border-champagne/12 px-4 py-3 text-center text-[11px] text-muted-foreground">
+            Drag to rotate · Scroll to zoom · Morph body · Drape Studio fabric
           </p>
         </motion.div>
+
+        <FittingRoomControls />
       </section>
 
       <section className="space-y-3" aria-labelledby="step-2-lesson">

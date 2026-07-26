@@ -29,8 +29,8 @@ export function FloatingActionButton() {
             aria-label={ariaLabel || label}
             className={cn(
               "pointer-events-auto inline-flex items-center gap-2 rounded-full px-5 py-3.5",
-              "bg-primary text-primary-foreground shadow-[0_14px_36px_-10px_rgba(15,23,28,0.55)]",
-              "ring-1 ring-white/20 transition hover:brightness-110 active:scale-[0.97]",
+              "bg-primary text-primary-foreground shadow-[0_14px_36px_-10px_color-mix(in_oklch,var(--champagne)_50%,transparent)]",
+              "ring-1 ring-champagne/35 transition hover:brightness-110 active:scale-[0.97]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             )}
           >

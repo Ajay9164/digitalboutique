@@ -44,10 +44,10 @@ export function MasteryCelebration() {
                       top: "12%",
                       background:
                         index % 3 === 0
-                          ? "var(--primary)"
+                          ? "var(--champagne)"
                           : index % 3 === 1
-                            ? "#C9A25F"
-                            : "oklch(0.75 0.08 185)",
+                            ? "var(--neon)"
+                            : "var(--neon-voice)",
                     }}
                     initial={{ y: 0, opacity: 1, scale: 1 }}
                     animate={{

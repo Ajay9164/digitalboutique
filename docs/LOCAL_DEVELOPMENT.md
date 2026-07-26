@@ -8,7 +8,7 @@ npm run dev
 
 Default URL: `http://localhost:3000`
 
-Service worker is **disabled in development** (`@serwist/next` `disable: development`) so hot reload stays predictable. Test PWA install / offline on a **production** build (`npm run build && npm run start`).
+Service worker is **disabled in development** (`@serwist/next` `disable` + `register: false` when `NODE_ENV === "development"`) so Turbopack hot reload never drives precaching. Test PWA install / offline on a **production** build (`npm run build && npm run start`). Production SW uses `cleanupOutdatedCaches` and soft-fails missing precache URLs so a single 404 cannot abort install.
 
 ## Project conventions
 

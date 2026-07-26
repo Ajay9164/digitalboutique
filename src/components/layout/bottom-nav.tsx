@@ -38,9 +38,9 @@ export function BottomNav() {
       <div
         className={cn(
           "pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-[1.75rem] p-1.5 sm:gap-1",
-          "border border-white/35 bg-background/55 shadow-[0_12px_40px_-12px_rgba(15,23,28,0.35)]",
-          "backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-background/45",
-          "dark:shadow-[0_16px_48px_-12px_rgba(0,0,0,0.65)]",
+          "border border-champagne/20 bg-card/75 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.65)]",
+          "backdrop-blur-2xl backdrop-saturate-150",
+          "shadow-[0_0_40px_-20px_color-mix(in_oklch,var(--champagne)_35%,transparent)]",
         )}
       >
         {NAV_ITEMS.map((item) => {

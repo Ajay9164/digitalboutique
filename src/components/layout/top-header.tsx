@@ -44,9 +44,9 @@ export function TopHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-white/20 dark:border-white/8",
-        "bg-background/70 backdrop-blur-2xl backdrop-saturate-150",
-        "supports-[backdrop-filter]:bg-background/55",
+        "sticky top-0 z-40 border-b border-champagne/15",
+        "bg-background/65 backdrop-blur-2xl backdrop-saturate-150",
+        "supports-[backdrop-filter]:bg-background/45",
       )}
     >
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4 sm:h-16 sm:px-6">
@@ -66,7 +66,7 @@ export function TopHeader() {
         <div className="flex shrink-0 items-center gap-2.5">
           <Link
             href="/progress"
-            className="interactive-lift group flex items-center gap-2 rounded-full border border-white/15 bg-background/50 py-1 pl-1 pr-2.5 backdrop-blur-md dark:border-white/10"
+            className="interactive-lift group flex items-center gap-2 rounded-full border border-champagne/20 bg-card/70 py-1 pl-1 pr-2.5 backdrop-blur-md"
             aria-label={`Mastery Level ${mastery.level}: ${mastery.title}`}
           >
             <MasteryProgressRing size={34} />
@@ -80,24 +80,33 @@ export function TopHeader() {
             </span>
           </Link>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-10 rounded-full bg-muted/50 ring-1 ring-border/60"
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-          >
-            {mounted ? (
-              isDark ? (
+          {mounted ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-10 rounded-full bg-muted/50 ring-1 ring-border/60"
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+            >
+              {isDark ? (
                 <Sun className="size-4" aria-hidden="true" />
               ) : (
                 <Moon className="size-4" aria-hidden="true" />
-              )
-            ) : (
+              )}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-10 rounded-full bg-muted/50 ring-1 ring-border/60"
+              aria-label="Toggle theme"
+              disabled
+            >
               <span className="size-4" aria-hidden="true" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
     </header>

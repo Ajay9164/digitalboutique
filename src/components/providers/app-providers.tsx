@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { installConsoleWarnFilters } from "@/lib/console-filters";
+import { installDevServiceWorkerCleanup } from "@/lib/dev-sw-cleanup";
 
 type AppProvidersProps = {
   children: React.ReactNode;
@@ -15,13 +16,15 @@ export function AppProviders({ children }: AppProvidersProps) {
     // PWA install listener is owned by PwaInstallBanner (ssr: false) so
     // beforeinstallprompt is never captured without a visible Install CTA.
     installConsoleWarnFilters();
+    // Dev: drop leftover prod SWs on localhost (Serwist is disabled in development).
+    installDevServiceWorkerCleanup();
   }, []);
 
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="dark"
+      enableSystem={false}
       disableTransitionOnChange
     >
       <TooltipProvider delayDuration={200}>{children}</TooltipProvider>

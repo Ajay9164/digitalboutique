@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { db, type StudioPhotoRecord } from "@/lib/db";
+import { db, type StudioPhoto, type StudioPhotoRecord } from "@/lib/db";
 import {
   DEFAULT_CROP,
   DEFAULT_OVERLAY,
@@ -9,13 +9,19 @@ import {
 } from "@/features/studio/lib/overlay";
 import type { PatternId } from "@/features/studio/data/patterns";
 import { createId } from "@/features/studio/lib/camera";
+import {
+  persistFabricCapture,
+  removeFabricCapture,
+  resolveStudioPhotos,
+  revokeAllFabricObjectUrls,
+} from "@/features/studio/lib/fabric-persist";
 
 export type StudioPhase = "camera" | "workspace" | "library";
 
 type StudioState = {
   hydrated: boolean;
   phase: StudioPhase;
-  photos: StudioPhotoRecord[];
+  photos: StudioPhoto[];
   activePhotoId: string | null;
   /** Live capture preview (not yet saved). */
   capturePreview: {
@@ -38,7 +44,7 @@ type StudioState = {
   setCapturePreview: (
     preview: { dataUrl: string; width: number; height: number } | null,
   ) => void;
-  saveCapture: (label?: string) => Promise<StudioPhotoRecord | null>;
+  saveCapture: (label?: string) => Promise<StudioPhoto | null>;
   selectPhoto: (id: string) => void;
   deletePhoto: (id: string) => Promise<void>;
   setPattern: (id: PatternId) => void;
@@ -73,7 +79,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (get().hydrated) return;
     try {
       const { withDb } = await import("@/lib/db/safe");
-      const { data: photos, error } = await withDb(
+      const { data: records, error } = await withDb(
         () => db.studioPhotos.orderBy("createdAt").reverse().toArray(),
         [] as StudioPhotoRecord[],
       );
@@ -85,6 +91,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         });
         return;
       }
+      const photos = await resolveStudioPhotos(records);
       set({
         hydrated: true,
         photos,
@@ -120,15 +127,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }
 
     const { withDb } = await import("@/lib/db/safe");
-    const record: StudioPhotoRecord = {
+    const record = await persistFabricCapture({
       id: createId(),
       dataUrl: preview.dataUrl,
       width: preview.width,
       height: preview.height,
       label: label?.trim() || `Fabric ${new Date().toLocaleString()}`,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    });
 
     const { error } = await withDb(async () => {
       await db.studioPhotos.put(record);
@@ -136,12 +141,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }, false);
 
     if (error) {
+      // Roll back OPFS write if IndexedDB failed.
+      await removeFabricCapture(record.id);
       throw new Error(error);
     }
 
+    const [photo] = await resolveStudioPhotos([record]);
     set((state) => ({
-      photos: [record, ...state.photos],
-      activePhotoId: record.id,
+      photos: [photo, ...state.photos],
+      activePhotoId: photo.id,
       capturePreview: null,
       phase: "workspace",
       overlay: { ...DEFAULT_OVERLAY },
@@ -149,7 +157,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       zoom: 1,
       cameraError: null,
     }));
-    return record;
+    return photo;
   },
 
   selectPhoto: (id) =>
@@ -170,6 +178,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     if (error) {
       throw new Error(error);
     }
+    await removeFabricCapture(id);
     set((state) => {
       const photos = state.photos.filter((photo) => photo.id !== id);
       const activePhotoId =
@@ -180,6 +189,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         phase: photos.length === 0 ? "camera" : state.phase,
       };
     });
+    if (get().photos.length === 0) {
+      revokeAllFabricObjectUrls();
+    }
   },
 
   setPattern: (id) => set({ patternId: id, phase: "workspace" }),

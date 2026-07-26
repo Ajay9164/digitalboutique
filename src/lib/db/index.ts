@@ -40,12 +40,23 @@ export type DraftLearningRecord = {
 /** Captured fabric photos for the Studio. */
 export type StudioPhotoRecord = {
   id: string;
+  /**
+   * Inline JPEG — legacy full image, or a small thumbnail when the full
+   * capture lives in OPFS (`opfsKey`).
+   */
   dataUrl: string;
+  /** OPFS filename under `fabric-captures/` (null = IndexedDB-only legacy). */
+  opfsKey: string | null;
   width: number;
   height: number;
   label: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+/** Runtime photo with a displayable URL (blob: from OPFS or data:). */
+export type StudioPhoto = StudioPhotoRecord & {
+  displayUrl: string;
 };
 
 export type ProjectMeasurements = {
@@ -313,6 +324,23 @@ class TailorDatabase extends Dexie {
           updatedAt: now,
         } satisfies AppMetaRecord);
       });
+    this.version(9)
+      .stores({ ...SCHEMA_V8 })
+      .upgrade(async (tx) => {
+        const now = new Date();
+        const photos = tx.table("studioPhotos");
+        await photos.toCollection().modify((photo: StudioPhotoRecord) => {
+          if (photo.opfsKey === undefined) {
+            photo.opfsKey = null;
+          }
+        });
+        await tx.table("meta").put({
+          id: "schema",
+          key: "schemaVersion",
+          value: "9",
+          updatedAt: now,
+        } satisfies AppMetaRecord);
+      });
   }
 }
 
@@ -321,4 +349,4 @@ export const db = new TailorDatabase();
 export const DRAFT_LEARNING_ID = "draft-learning" as const;
 export const LEARNING_PROFILE_ID = "profile" as const;
 export const JOURNEY_PROGRESS_ID = "journey" as const;
-export const DB_SCHEMA_VERSION = 8 as const;
+export const DB_SCHEMA_VERSION = 9 as const;

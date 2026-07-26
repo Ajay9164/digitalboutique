@@ -1,7 +1,7 @@
 # IndexedDB migrations
 
 Database name: `tailor`  
-Current schema: **v8** (`DB_SCHEMA_VERSION` in `src/lib/db/index.ts`)
+Current schema: **v9** (`DB_SCHEMA_VERSION` in `src/lib/db/index.ts`)
 
 ## Version history
 
@@ -15,6 +15,7 @@ Current schema: **v8** (`DB_SCHEMA_VERSION` in `src/lib/db/index.ts`)
 | 6 | Learning ecosystem tables |
 | 7 | Profile backfill, photo cleanup, schema meta stamp |
 | 8 | Guided Learning Mode: `journeyProgress`, `journeyLessons` |
+| 9 | Studio photos: optional `opfsKey`; full JPEG binaries prefer OPFS (`fabric-captures/`), IndexedDB keeps thumbnails |
 
 ## Rules
 
@@ -22,10 +23,10 @@ Current schema: **v8** (`DB_SCHEMA_VERSION` in `src/lib/db/index.ts`)
 2. Prefer **additive** store/index changes.
 3. Use `.upgrade(async (tx) => { … })` for data transforms and backfills.
 4. Bump `DB_SCHEMA_VERSION` and document the change here.
-5. Large images currently store as JPEG **data URLs**; future versions may migrate to Blobs for quota.
+5. High-res fabric captures use the Origin Private File System when available; IndexedDB stores metadata + thumbnails (legacy rows may still hold full data URLs until lazy migrate).
 
 ## Testing upgrades
 
 1. Install an older build, create sample data.
 2. Deploy / run the new build.
-3. Confirm profile exists, photos still load, Learn hub hydrates.
+3. Confirm profile exists, photos still load (OPFS or legacy data URL), Learn hub hydrates.

@@ -55,8 +55,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2F6F64" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F171C" },
+    { media: "(prefers-color-scheme: light)", color: "#1A2744" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1224" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -73,7 +73,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fontSans.variable} ${fontDisplay.variable} h-full antialiased`}
+      className={`${fontSans.variable} ${fontDisplay.variable} dark h-full antialiased`}
     >
       <body className="min-h-dvh bg-background font-sans text-foreground">
         <AppProviders>

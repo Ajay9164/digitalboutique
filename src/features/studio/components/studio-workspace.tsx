@@ -211,7 +211,7 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={photo.dataUrl}
+            src={photo.displayUrl}
             alt="Captured fabric"
             draggable={false}
             className="absolute inset-0 h-full w-full select-none object-cover"

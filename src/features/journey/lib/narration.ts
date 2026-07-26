@@ -18,13 +18,26 @@ export function stopNarration(): void {
   window.speechSynthesis.cancel();
 }
 
-export function speakCue(cue: NarrationCue, enabled: boolean): void {
-  if (!enabled || !isSpeechSupported()) return;
+/** Cancel any queued/speaking utterances — safe to call from route unmount. */
+export function disposeSpeechSynthesis(): void {
   stopNarration();
-  const text = [cue.title, cue.what, cue.why].filter(Boolean).join(". ");
+}
+
+export function speakText(
+  text: string,
+  options?: { rate?: number; pitch?: number; lang?: string },
+): void {
+  if (!text.trim() || !isSpeechSupported()) return;
+  stopNarration();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.95;
-  utterance.pitch = 1;
-  utterance.lang = "en-US";
+  utterance.rate = options?.rate ?? 0.95;
+  utterance.pitch = options?.pitch ?? 1;
+  utterance.lang = options?.lang ?? "en-US";
   window.speechSynthesis.speak(utterance);
+}
+
+export function speakCue(cue: NarrationCue, enabled: boolean): void {
+  if (!enabled) return;
+  const text = [cue.title, cue.what, cue.why].filter(Boolean).join(". ");
+  speakText(text);
 }

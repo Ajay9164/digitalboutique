@@ -24,7 +24,7 @@
 
 `vercel.json` already sets:
 
-- `Permissions-Policy: camera=(self), microphone=()`
+- `Permissions-Policy: camera=(self), microphone=(self)`
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `X-Content-Type-Options: nosniff`
 

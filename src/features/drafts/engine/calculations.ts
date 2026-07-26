@@ -12,7 +12,8 @@ export type CalculationId =
   | "sleeve"
   | "darts"
   | "ease"
-  | "seam-allowance";
+  | "seam-allowance"
+  | "fabric";
 
 export type CalculationResult = {
   id: CalculationId;

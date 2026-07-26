@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, Plus } from "lucide-react";
+import { BiometricLock } from "@/features/journal/components/biometric-lock";
 import { JournalToolbar } from "@/features/journal/components/journal-toolbar";
 import { ProjectCard } from "@/features/journal/components/project-card";
 import { ProjectForm } from "@/features/journal/components/project-form";
@@ -27,7 +28,7 @@ function JournalFab() {
   return null;
 }
 
-export function JournalView() {
+function JournalUnlockedContent() {
   const hydrate = useJournalStore((s) => s.hydrate);
   const retryStorage = useJournalStore((s) => s.retryStorage);
   const view = useJournalStore((s) => s.view);
@@ -205,5 +206,13 @@ export function JournalView() {
         ) : null}
       </AnimatePresence>
     </div>
+  );
+}
+
+export function JournalView() {
+  return (
+    <BiometricLock>
+      <JournalUnlockedContent />
+    </BiometricLock>
   );
 }

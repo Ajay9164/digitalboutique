@@ -6,7 +6,12 @@ import { FileDown, FileImage, Grid3x3, Magnet, Printer } from "lucide-react";
 import type { DraftBoardHandle } from "@/features/drafts/engine/components/interactive-draft-board";
 import { MeasurementForm } from "@/features/drafts/engine/components/measurement-form";
 import { CalculationPanel } from "@/features/drafts/engine/components/calculation-panel";
+import { SmartFabricSelector } from "@/features/drafts/engine/components/smart-fabric-selector";
 import { computeEngineCalculations } from "@/features/drafts/engine/calculations";
+import {
+  applyFabricAdjustments,
+  type FabricId,
+} from "@/features/drafts/engine/fabric-profiles";
 import {
   DEFAULT_ENGINE_VALUES,
   type EngineFormValues,
@@ -34,11 +39,15 @@ const InteractiveDraftBoard = dynamic(
 export function DraftingEngine({ className }: { className?: string }) {
   const boardRef = useRef<DraftBoardHandle>(null);
   const [values, setValues] = useState<EngineFormValues>(DEFAULT_ENGINE_VALUES);
+  const [fabric, setFabric] = useState<FabricId | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const calculations = computeEngineCalculations(values);
+  const calculations = applyFabricAdjustments(
+    computeEngineCalculations(values),
+    fabric,
+  );
 
   const withStage = (action: (stage: NonNullable<ReturnType<DraftBoardHandle["getStage"]>>) => void) => {
     const stage = boardRef.current?.getStage();
@@ -63,12 +72,15 @@ export function DraftingEngine({ className }: { className?: string }) {
           Intelligent drafting engine
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enter body measurements — the engine calculates every drafting value,
-          draws the block, and exports print-ready files.
+          Enter body measurements — pick Silk or Cotton for smart shrinkage,
+          then the engine calculates every drafting value, draws the block, and
+          exports print-ready files.
         </p>
       </div>
 
       <MeasurementForm onChange={setValues} />
+
+      <SmartFabricSelector value={fabric} onChange={setFabric} />
 
       <CalculationPanel results={calculations.results} />
 

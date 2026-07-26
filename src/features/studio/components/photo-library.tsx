@@ -36,7 +36,7 @@ export function PhotoLibrary({ className }: { className?: string }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={photo.dataUrl}
+                src={photo.dataUrl || photo.displayUrl}
                 alt={photo.label}
                 className="aspect-square w-full object-cover"
               />

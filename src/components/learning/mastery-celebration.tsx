@@ -3,16 +3,27 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { useMasteryStore } from "@/stores/mastery-store";
+import { useUserStore } from "@/stores/user-store";
+import { useMounted } from "@/hooks/use-mounted";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { masteryCongratsLabel } from "@/features/onboarding/lib/personalization";
 import { Button } from "@/components/ui/button";
 
 /**
  * Lightweight mastery unlock toast — confetti + glowing badge for +50 XP awards.
+ * Congratulates by persisted name once the client has mounted (hydration-safe).
  */
 export function MasteryCelebration() {
   const celebration = useMasteryStore((s) => s.celebration);
   const clearCelebration = useMasteryStore((s) => s.clearCelebration);
   const reduceMotion = useReducedMotion();
+  const mounted = useMounted();
+  const userHydrated = useUserStore((s) => s.hydrated);
+  const userName = useUserStore((s) => s.userName);
+
+  const congrats = masteryCongratsLabel(
+    mounted && userHydrated ? userName : null,
+  );
 
   return (
     <AnimatePresence>
@@ -24,7 +35,7 @@ export function MasteryCelebration() {
           exit={reduceMotion ? undefined : { opacity: 0 }}
           role="alertdialog"
           aria-modal="true"
-          aria-label="Mastery unlocked"
+          aria-label={congrats}
         >
           <motion.div
             initial={reduceMotion ? false : { y: 40, scale: 0.92, opacity: 0 }}
@@ -33,7 +44,6 @@ export function MasteryCelebration() {
             transition={{ type: "spring", stiffness: 300, damping: 24 }}
             className="glass-panel relative w-full max-w-sm overflow-hidden rounded-[1.75rem] p-6 text-center shadow-[0_30px_80px_-28px_rgba(15,23,28,0.55)]"
           >
-            {/* Confetti */}
             {!reduceMotion
               ? Array.from({ length: 14 }).map((_, index) => (
                   <motion.span
@@ -80,9 +90,19 @@ export function MasteryCelebration() {
               +{celebration.xp} Tailor Points
             </p>
             <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight">
-              {celebration.title}
+              {!mounted || !userHydrated ? (
+                <span
+                  className="mx-auto inline-block h-7 w-48 max-w-full animate-pulse rounded-md bg-muted/70"
+                  aria-hidden
+                />
+              ) : (
+                congrats
+              )}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-2 text-sm font-medium text-foreground/90">
+              {celebration.title}
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
               {celebration.detail}
             </p>
             <p className="mt-3 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">

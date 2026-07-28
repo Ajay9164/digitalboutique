@@ -572,7 +572,7 @@ export default function InteractiveMannequin({
   return (
     <motion.div
       className={cn(
-        "relative h-full min-h-[400px] w-full overflow-hidden bg-black",
+        "relative h-full min-h-0 w-full overflow-hidden bg-black",
         className,
       )}
       role="img"
@@ -591,7 +591,7 @@ export default function InteractiveMannequin({
         />
       ) : (
         <MannequinWebGLBoundary>
-          <div className="relative h-full min-h-[400px] w-full">
+          <div className="relative h-full min-h-0 w-full">
             <Suspense fallback={<CinematicLoader />}>
               <MannequinCanvas
                 onContextLost={onContextLost}

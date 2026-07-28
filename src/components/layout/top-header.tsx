@@ -4,17 +4,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { APP_NAME } from "@/lib/constants";
 import { useMounted } from "@/hooks/use-mounted";
 import { useUiStore } from "@/stores/ui-store";
 import { MasteryProgressRing } from "@/components/learning/mastery-progress-ring";
 import { useMasteryStore } from "@/stores/mastery-store";
+import { useUserStore } from "@/stores/user-store";
 import { resolveMastery } from "@/features/learning/lib/mastery";
+import {
+  atelierBrandLabel,
+  atelierWelcomeLabel,
+} from "@/features/onboarding/lib/personalization";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const titles: Record<string, string> = {
-  "/": "Journey",
+  "/": "Home",
   "/journey": "Journey",
   "/progress": "Progress",
   "/measurements": "Measurements",
@@ -27,6 +31,8 @@ export function TopHeader() {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useMounted();
+  const userHydrated = useUserStore((s) => s.hydrated);
+  const userName = useUserStore((s) => s.userName);
   const totalXp = useMasteryStore((s) => s.totalXp);
   const modulesCompleted = useMasteryStore((s) => s.modulesCompleted);
   const mastery = resolveMastery(totalXp, modulesCompleted);
@@ -41,6 +47,13 @@ export function TopHeader() {
         : "Workspace");
   const isDark = (resolvedTheme ?? theme) === "dark";
 
+  // Mount + persist gate — never paint a stored name on the server.
+  const personalized = mounted && userHydrated ? userName : null;
+  const brandLabel = atelierBrandLabel(personalized);
+  const welcomeLabel = personalized
+    ? atelierWelcomeLabel(personalized)
+    : sectionTitle;
+
   return (
     <header
       className={cn(
@@ -54,12 +67,26 @@ export function TopHeader() {
           <Link
             href="/"
             className="font-display text-[1.35rem] font-semibold tracking-tight text-foreground transition-opacity hover:opacity-80"
-            aria-label={`${APP_NAME} home`}
+            aria-label={`${brandLabel} home`}
           >
-            {APP_NAME}
+            {!mounted || !userHydrated ? (
+              <span
+                className="inline-block h-[1.15em] w-[7.5rem] max-w-full animate-pulse rounded-md bg-muted/70 align-middle"
+                aria-hidden
+              />
+            ) : (
+              brandLabel
+            )}
           </Link>
           <p className="truncate text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-            {sectionTitle}
+            {!mounted || !userHydrated ? (
+              <span
+                className="inline-block h-2.5 w-24 animate-pulse rounded bg-muted/60"
+                aria-hidden
+              />
+            ) : (
+              welcomeLabel
+            )}
           </p>
         </div>
 

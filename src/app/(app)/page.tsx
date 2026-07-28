@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
-import { JourneyDashboardView } from "@/features/journey/components/journey-dashboard-view";
+import { CinematicLandingView } from "@/features/measurements/components/cinematic-landing-view";
 import { FeatureErrorBoundary } from "@/components/shared/feature-error-boundary";
 
 export const metadata: Metadata = {
-  title: "Learning Journey",
+  title: "Atelier Overture",
   description:
-    "Guided Tailor Academy — structured lessons from foundations to a complete blouse project.",
+    "Scroll the cinematic dress form — then enter the Digital Atelier.",
 };
 
 export default function HomePage() {
   return (
     <FeatureErrorBoundary
-      title="Academy failed to load"
-      description="The learning journey hit an error. Retry without leaving Tailor."
+      title="Cinema failed to load"
+      description="The overture hit an error. Open Measurements from the nav to continue."
     >
-      <JourneyDashboardView />
+      <CinematicLandingView />
     </FeatureErrorBoundary>
   );
 }

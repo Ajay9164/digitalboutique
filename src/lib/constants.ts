@@ -7,8 +7,8 @@ export const APP_TITLE_TEMPLATE = "%s · Tailor";
 export const NAV_ITEMS = [
   {
     href: "/",
-    label: "Journey",
-    shortLabel: "Journey",
+    label: "Home",
+    shortLabel: "Home",
   },
   {
     href: "/measurements",

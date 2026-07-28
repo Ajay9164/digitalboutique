@@ -22,6 +22,14 @@ const CurtainDropOverlay = dynamic(
   { ssr: false },
 );
 
+const OnboardingOverlay = dynamic(
+  () =>
+    import("@/features/onboarding/components/onboarding-overlay").then(
+      (m) => m.OnboardingOverlay,
+    ),
+  { ssr: false },
+);
+
 type AppShellProps = {
   children: React.ReactNode;
 };
@@ -55,6 +63,7 @@ export function AppShell({ children }: AppShellProps) {
       <DeveloperFooter />
       <BottomNav />
       <CurtainDropOverlay />
+      <OnboardingOverlay />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { disposeVoiceMentorRuntime } from "@/stores/voice-mentor-store";
 
 type DigitalAtelierCtaProps = {
   className?: string;
-  /** Destination after the curtain seals — Digital Atelier (Studio). */
+  /** Destination after the curtain seals — Measurements working dashboard. */
   href?: string;
 };
 
@@ -20,7 +20,7 @@ type DigitalAtelierCtaProps = {
  */
 export function DigitalAtelierCta({
   className,
-  href = "/studio",
+  href = "/measurements",
 }: DigitalAtelierCtaProps) {
   const reduceMotion = useReducedMotion();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -78,8 +78,8 @@ export function DigitalAtelierCta({
           The form is ready
         </h2>
         <p className="max-w-md font-sans text-sm font-light leading-relaxed text-muted-foreground sm:text-[15px]">
-          The digital mannequin stands complete. Step into the atelier and begin
-          drafting, draping, and fitting in the tools built for craft.
+          The digital mannequin stands complete. Enter the atelier to learn every
+          measurement on the working dress form.
         </p>
 
         <motion.div

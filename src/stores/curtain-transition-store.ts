@@ -14,8 +14,8 @@ type CurtainTransitionState = {
   href: string | null;
   origin: CurtainOrigin | null;
   /**
-   * When true, Measurements must fade/unmount WebGL + scroll cinema
-   * before the route swap (prevents GPU/memory spikes).
+   * When true, the cinematic landing (and any dashboard WebGL) must fade/unmount
+   * before the route swap into `/measurements` (prevents GPU/memory spikes).
    */
   dismantleScene: boolean;
   begin: (args: { href: string; origin: CurtainOrigin }) => void;

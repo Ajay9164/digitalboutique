@@ -14,26 +14,15 @@ const PwaInstallBanner = dynamic(
   { ssr: false },
 );
 
-const CurtainDropOverlay = dynamic(
-  () =>
-    import("@/components/layout/curtain-drop-overlay").then(
-      (m) => m.CurtainDropOverlay,
-    ),
-  { ssr: false },
-);
-
-const OnboardingOverlay = dynamic(
-  () =>
-    import("@/features/onboarding/components/onboarding-overlay").then(
-      (m) => m.OnboardingOverlay,
-    ),
-  { ssr: false },
-);
-
 type AppShellProps = {
   children: React.ReactNode;
 };
 
+/**
+ * Dashboard chrome for the `(app)` route group only —
+ * TopHeader, BottomNav, voice mentor, PWA banner, mastery toast.
+ * Cinematic landing (`/`) does not use this shell.
+ */
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden">
@@ -62,8 +51,6 @@ export function AppShell({ children }: AppShellProps) {
       <VoiceMentorFab />
       <DeveloperFooter />
       <BottomNav />
-      <CurtainDropOverlay />
-      <OnboardingOverlay />
     </div>
   );
 }

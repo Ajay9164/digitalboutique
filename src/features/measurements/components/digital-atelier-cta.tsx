@@ -1,39 +1,50 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DIGITAL_ATELIER_HREF } from "@/lib/constants";
 import { useCurtainTransitionStore } from "@/stores/curtain-transition-store";
 import { disposeVoiceMentorRuntime } from "@/stores/voice-mentor-store";
 
 type DigitalAtelierCtaProps = {
   className?: string;
-  /** Destination after the curtain seals — Measurements working dashboard. */
+  /**
+   * Destination after the curtain seals.
+   * Defaults to `/measurements` so `(app)` chrome loads on arrival only.
+   */
   href?: string;
 };
 
 /**
  * Grand climax CTA — glassmorphism + 1px champagne border + light-sweep hover.
- * Click is intercepted for a theatrical curtain-drop route transition
- * (no instant Next.js navigation).
+ * Click is intercepted for a theatrical curtain-drop, then
+ * `router.push('/measurements')` via CurtainDropOverlay (root layout).
  */
 export function DigitalAtelierCta({
   className,
-  href = "/measurements",
+  href = DIGITAL_ATELIER_HREF,
 }: DigitalAtelierCtaProps) {
+  const router = useRouter();
   const reduceMotion = useReducedMotion();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const phase = useCurtainTransitionStore((s) => s.phase);
   const begin = useCurtainTransitionStore((s) => s.begin);
   const busy = phase !== "idle";
 
+  // Warm the dashboard route so the (app) shell paints under the sealed curtain.
+  useEffect(() => {
+    router.prefetch(href);
+  }, [router, href]);
+
   const handleEnter = () => {
     if (busy) return;
     const el = buttonRef.current;
     if (!el) return;
 
-    // Silence any mentor speech before WebGL teardown.
+    // Silence any mentor speech before WebGL teardown on the landing.
     disposeVoiceMentorRuntime();
 
     const rect = el.getBoundingClientRect();

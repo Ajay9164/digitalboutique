@@ -17,8 +17,9 @@ function viewportSize() {
 }
 
 /**
- * Theatrical curtain drop — fixed viewport overlay that survives route swaps.
- * Mounted in AppShell (client-only) so it outlives the Measurements page unmount.
+ * Theatrical curtain drop — fixed viewport overlay that survives route-group swaps.
+ * Mounted from root `RootOverlays` (not AppShell) so it outlives the cinematic
+ * landing unmount and can `router.push('/measurements')` into the `(app)` shell.
  */
 export function CurtainDropOverlay() {
   const router = useRouter();
@@ -51,6 +52,8 @@ export function CurtainDropOverlay() {
   useEffect(() => {
     if (phase !== "holding" || !href || pushed.current) return;
     pushed.current = true;
+    // Handoff into the `(app)` route group — TopHeader / BottomNav / voice FAB
+    // mount with /measurements, not on the cinematic landing.
     router.push(href);
   }, [phase, href, router]);
 

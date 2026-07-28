@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/app-providers";
+import { RootOverlays } from "@/components/layout/root-overlays";
 import { SkipLink } from "@/components/shared/skip-link";
 import {
   APP_DEFAULT_TITLE,
@@ -64,6 +65,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+/**
+ * Root shell — providers + document only.
+ * Dashboard chrome (TopHeader, BottomNav, voice FAB, PWA banner) lives in `(app)/layout`.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -79,6 +84,7 @@ export default function RootLayout({
         <AppProviders>
           <SkipLink />
           {children}
+          <RootOverlays />
         </AppProviders>
       </body>
     </html>

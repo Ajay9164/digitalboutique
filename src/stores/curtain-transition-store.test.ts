@@ -1,4 +1,5 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { DIGITAL_ATELIER_HREF } from "@/lib/constants";
 import { useCurtainTransitionStore } from "@/stores/curtain-transition-store";
 
 describe("curtain transition store", () => {
@@ -6,14 +7,14 @@ describe("curtain transition store", () => {
     useCurtainTransitionStore.getState().reset();
   });
 
-  it("begins a drop from idle and dismantles the scene", () => {
+  it("begins a drop toward the measurements dashboard", () => {
     useCurtainTransitionStore.getState().begin({
-      href: "/studio",
+      href: DIGITAL_ATELIER_HREF,
       origin: { top: 10, left: 20, width: 300, height: 56 },
     });
     const s = useCurtainTransitionStore.getState();
     expect(s.phase).toBe("dropping");
-    expect(s.href).toBe("/studio");
+    expect(s.href).toBe("/measurements");
     expect(s.dismantleScene).toBe(true);
     expect(s.origin?.width).toBe(300);
   });
@@ -21,20 +22,20 @@ describe("curtain transition store", () => {
   it("ignores begin while already dropping", () => {
     const begin = useCurtainTransitionStore.getState().begin;
     begin({
-      href: "/studio",
+      href: DIGITAL_ATELIER_HREF,
       origin: { top: 0, left: 0, width: 100, height: 40 },
     });
     begin({
-      href: "/measurements",
+      href: "/studio",
       origin: { top: 1, left: 1, width: 50, height: 20 },
     });
-    expect(useCurtainTransitionStore.getState().href).toBe("/studio");
+    expect(useCurtainTransitionStore.getState().href).toBe("/measurements");
   });
 
   it("covers then lifts through the theatrical phases", () => {
     const store = useCurtainTransitionStore.getState();
     store.begin({
-      href: "/studio",
+      href: DIGITAL_ATELIER_HREF,
       origin: { top: 0, left: 0, width: 100, height: 40 },
     });
     store.markCovered();

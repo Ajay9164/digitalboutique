@@ -52,7 +52,7 @@ function CinemaTitleCard({
     <motion.article
       style={{ opacity, x, y }}
       className={cn(
-        "pointer-events-none absolute z-30 w-[min(78%,16rem)]",
+        "pointer-events-none absolute z-10 w-[min(78%,16rem)] sm:w-[min(42%,18rem)]",
         "rounded-2xl border border-champagne/80 bg-black/30 p-4 shadow-[0_20px_50px_-28px_rgba(0,0,0,0.85)]",
         "backdrop-blur-2xl",
         sideClass(beat.side),
@@ -87,7 +87,7 @@ export function CinemaTitlePanels({
 
   return (
     <div
-      className={cn("pointer-events-none absolute inset-0 z-30", className)}
+      className={cn("pointer-events-none absolute inset-0 z-10", className)}
       aria-live="polite"
     >
       {beats.map((beat) => (

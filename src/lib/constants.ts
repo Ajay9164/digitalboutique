@@ -4,6 +4,13 @@ export const APP_DESCRIPTION =
 export const APP_DEFAULT_TITLE = "Tailor";
 export const APP_TITLE_TEMPLATE = "%s · Tailor";
 
+/**
+ * Landing → dashboard handoff destination.
+ * Lives inside the `(app)` route group so TopHeader / BottomNav / voice FAB
+ * mount only after this navigation (not on the cinematic `/` landing).
+ */
+export const DIGITAL_ATELIER_HREF = "/measurements" as const;
+
 export const NAV_ITEMS = [
   {
     href: "/",

@@ -1,13 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
-  ContactShadows,
   Line,
   OrbitControls,
 } from "@react-three/drei";
+import type { MotionValue } from "framer-motion";
+import { motion } from "framer-motion";
+import { ScrollCinemaCamera } from "@/features/measurements/components/scroll-cinema-camera";
+import { CinematicLoader } from "@/features/measurements/components/cinematic-loader";
+import {
+  CraftToHoloMaterial,
+  LuxuryContactShadow,
+  LuxurySceneAtmosphere,
+  LuxuryStudioLighting,
+} from "@/features/measurements/components/luxury-studio";
 import {
   MEASUREMENTS,
   type MeasurementId,
@@ -27,44 +36,23 @@ import { useStudioStore } from "@/stores/studio-store";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn } from "@/lib/utils";
 
-/** Luxury dress-form + cyberpunk measurement neon */
-const FORM_COLOR = "#E8E0D4";
+/** Luxury dress-form stand + cyberpunk measurement neon */
 const STAND_COLOR = "#0A0C12";
 const REGION_IDLE = "#3D6B75";
 const REGION_HOVER = "#4FD6E8";
 const REGION_ACTIVE = "#5EFFF0";
 
 /* -------------------------------------------------------------------------- */
-/* Mannequin body — parametric lathe + optional Studio fabric drape texture   */
+/* Mannequin body — parametric lathe + craft→holo material + fabric drape     */
 /* -------------------------------------------------------------------------- */
 
-function SilkMaterial({
-  color = FORM_COLOR,
-  roughness = 0.38,
-  metalness = 0.06,
-  map = null,
+function MannequinBody({
+  fabricMap,
+  scrollProgress,
 }: {
-  color?: string;
-  roughness?: number;
-  metalness?: number;
-  map?: THREE.Texture | null;
+  fabricMap: THREE.Texture | null;
+  scrollProgress?: MotionValue<number>;
 }) {
-  // When draped, soften clearcoat so print detail stays readable.
-  const draped = Boolean(map);
-  return (
-    <meshPhysicalMaterial
-      color={draped ? "#ffffff" : color}
-      map={map ?? undefined}
-      roughness={draped ? 0.55 : roughness}
-      metalness={draped ? 0.02 : metalness}
-      clearcoat={draped ? 0.25 : 0.55}
-      clearcoatRoughness={draped ? 0.6 : 0.45}
-      envMapIntensity={0.45}
-    />
-  );
-}
-
-function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
   const morph = useMeasurementStore((s) => s.bodyMorph);
 
   const torsoGeometry = useMemo(() => {
@@ -87,7 +75,7 @@ function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
   return (
     <group>
       <mesh geometry={torsoGeometry} castShadow receiveShadow>
-        <SilkMaterial map={fabricMap} />
+        <CraftToHoloMaterial progress={scrollProgress} map={fabricMap} />
       </mesh>
 
       {[-1, 1].map((side) => (
@@ -98,7 +86,7 @@ function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
           scale={[1, 1, 0.92]}
         >
           <sphereGeometry args={[bustRadius, 24, 24]} />
-          <SilkMaterial map={fabricMap} />
+          <CraftToHoloMaterial progress={scrollProgress} map={fabricMap} />
         </mesh>
       ))}
 
@@ -106,10 +94,10 @@ function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
         <sphereGeometry args={[0.05, 24, 24]} />
         <meshPhysicalMaterial
           color={STAND_COLOR}
-          roughness={0.4}
-          metalness={0.45}
-          clearcoat={0.35}
-          clearcoatRoughness={0.4}
+          roughness={0.35}
+          metalness={0.55}
+          clearcoat={0.4}
+          clearcoatRoughness={0.35}
         />
       </mesh>
 
@@ -125,7 +113,7 @@ function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
         >
           <mesh position={[0, -0.26, 0]} castShadow>
             <capsuleGeometry args={[0.05, 0.42, 6, 16]} />
-            <SilkMaterial />
+            <CraftToHoloMaterial progress={scrollProgress} />
           </mesh>
         </group>
       ))}
@@ -134,18 +122,18 @@ function MannequinBody({ fabricMap }: { fabricMap: THREE.Texture | null }) {
         <cylinderGeometry args={[0.015, 0.015, 0.62, 16]} />
         <meshPhysicalMaterial
           color={STAND_COLOR}
-          roughness={0.4}
-          metalness={0.5}
-          clearcoat={0.3}
+          roughness={0.35}
+          metalness={0.6}
+          clearcoat={0.35}
         />
       </mesh>
       <mesh position={[0, 0.025, 0]} receiveShadow>
         <cylinderGeometry args={[0.23, 0.26, 0.05, 32]} />
         <meshPhysicalMaterial
           color={STAND_COLOR}
-          roughness={0.5}
-          metalness={0.35}
-          clearcoat={0.25}
+          roughness={0.45}
+          metalness={0.4}
+          clearcoat={0.3}
         />
       </mesh>
     </group>
@@ -377,31 +365,18 @@ function RegionOverlays({ reduceMotion }: { reduceMotion: boolean }) {
   );
 }
 
-function StudioLighting() {
-  return (
-    <>
-      <ambientLight intensity={0.42} />
-      <hemisphereLight color="#F2E6C8" groundColor="#0A1020" intensity={0.48} />
-      <directionalLight
-        position={[2.4, 3.4, 2.2]}
-        intensity={1.05}
-        color="#FFE6A8"
-        castShadow
-        shadow-mapSize={[512, 512]}
-        shadow-bias={-0.0002}
-      />
-      <directionalLight
-        position={[-2.4, 1.6, 1.2]}
-        intensity={0.55}
-        color="#5EFFF0"
-      />
-      <directionalLight position={[0.2, 2.8, -2.4]} intensity={0.22} color="#8AB4FF" />
-    </>
-  );
-}
-
 export type InteractiveMannequinProps = {
   className?: string;
+  /**
+   * Framer Motion scroll progress (0→1). When set, drives a cinematic
+   * camera fly-through and craft→holo material morph; OrbitControls
+   * stay available when reduced-motion prefers free orbit.
+   */
+  scrollProgress?: MotionValue<number>;
+  /** Fires once the WebGL canvas is created and ready for narrative. */
+  onReady?: () => void;
+  /** Curtain-drop teardown — pause the frame loop and fade the canvas. */
+  dismantling?: boolean;
 };
 
 function WebGLContextGuard({ onContextLost }: { onContextLost: () => void }) {
@@ -451,8 +426,14 @@ function WebGLLifecycleCleanup() {
 
 function MannequinCanvas({
   onContextLost,
+  scrollProgress,
+  onReady,
+  dismantling = false,
 }: {
   onContextLost: () => void;
+  scrollProgress?: MotionValue<number>;
+  onReady?: () => void;
+  dismantling?: boolean;
 }) {
   const select = useMeasurementStore((s) => s.select);
   const reduceMotion = useReducedMotion();
@@ -460,6 +441,7 @@ function MannequinCanvas({
   const fabricPhotoId = useMeasurementStore((s) => s.fabricPhotoId);
   const photos = useStudioStore((s) => s.photos);
   const activePhotoId = useStudioStore((s) => s.activePhotoId);
+  const readySent = useRef(false);
 
   const drapePhoto = useMemo(() => {
     if (!fabricDrapeEnabled) return null;
@@ -469,69 +451,87 @@ function MannequinCanvas({
   }, [fabricDrapeEnabled, fabricPhotoId, activePhotoId, photos]);
 
   const fabricMap = useFabricTexture(drapePhoto?.displayUrl ?? null);
+  const cinemaEnabled = Boolean(scrollProgress) && !reduceMotion && !dismantling;
 
   return (
     <Canvas
       className="absolute inset-0 h-full w-full touch-none"
       shadows="percentage"
-      dpr={[1, 1.25]}
+      // Cap DPR to protect scroll cinema from dropped frames on HiDPI.
+      dpr={[1, 1.15]}
+      performance={{ min: 0.5, max: 1, debounce: 200 }}
+      frameloop={dismantling ? "never" : "always"}
       gl={{
         antialias: true,
         alpha: true,
-        powerPreference: "default",
-        preserveDrawingBuffer: true,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: false,
         failIfMajorPerformanceCaveat: false,
+        stencil: false,
+        depth: true,
       }}
       camera={{ position: [0.55, 1.48, 2.05], fov: 32, near: 0.1, far: 40 }}
       onCreated={({ gl }) => {
         gl.shadowMap.enabled = true;
         gl.shadowMap.type = THREE.PCFShadowMap;
         gl.toneMapping = THREE.ACESFilmicToneMapping;
-        gl.toneMappingExposure = 1.0;
+        gl.toneMappingExposure = 1.05;
         gl.outputColorSpace = THREE.SRGBColorSpace;
+        // Defer one frame so first paint settles before narrative unlock.
+        requestAnimationFrame(() => {
+          if (!readySent.current) {
+            readySent.current = true;
+            onReady?.();
+          }
+        });
       }}
       onPointerMissed={() => select(null)}
     >
-      <WebGLContextGuard onContextLost={onContextLost} />
-      <WebGLLifecycleCleanup />
-      <StudioLighting />
-      {/* No Environment / HDR — those fetch remote assets and break offline. */}
-      <MannequinBody fabricMap={fabricMap} />
-      <RegionOverlays reduceMotion={!!reduceMotion} />
-      <ContactShadows
-        position={[0, 0.001, 0]}
-        resolution={256}
-        scale={6}
-        blur={1.8}
-        opacity={0.4}
-        far={4}
-      />
-      <OrbitControls
-        makeDefault
-        enablePan
-        enableZoom
-        enableRotate
-        enableDamping
-        dampingFactor={0.08}
-        target={[0, 1.12, 0]}
-        minDistance={1.05}
-        maxDistance={3.1}
-        minPolarAngle={Math.PI * 0.28}
-        maxPolarAngle={Math.PI * 0.58}
-        minAzimuthAngle={-Math.PI * 0.85}
-        maxAzimuthAngle={Math.PI * 0.85}
-      />
+      <Suspense fallback={null}>
+        <WebGLContextGuard onContextLost={onContextLost} />
+        <WebGLLifecycleCleanup />
+        <LuxurySceneAtmosphere progress={scrollProgress} />
+        <LuxuryStudioLighting progress={scrollProgress} />
+        {/* No Environment / HDR — those fetch remote assets and break offline. */}
+        <MannequinBody fabricMap={fabricMap} scrollProgress={scrollProgress} />
+        <RegionOverlays reduceMotion={!!reduceMotion} />
+        <LuxuryContactShadow />
+        {cinemaEnabled && scrollProgress ? (
+          <ScrollCinemaCamera progress={scrollProgress} />
+        ) : null}
+        <OrbitControls
+          makeDefault
+          enabled={!cinemaEnabled}
+          enablePan={!cinemaEnabled}
+          enableZoom={!cinemaEnabled}
+          enableRotate={!cinemaEnabled}
+          enableDamping
+          dampingFactor={0.08}
+          target={[0, 1.12, 0]}
+          minDistance={1.05}
+          maxDistance={3.1}
+          minPolarAngle={Math.PI * 0.28}
+          maxPolarAngle={Math.PI * 0.58}
+          minAzimuthAngle={-Math.PI * 0.85}
+          maxAzimuthAngle={Math.PI * 0.85}
+        />
+      </Suspense>
     </Canvas>
   );
 }
 
 export default function InteractiveMannequin({
   className,
+  scrollProgress,
+  onReady,
+  dismantling = false,
 }: InteractiveMannequinProps) {
   // Start SSR/hydration-safe; sync online status after mount only.
   const [use2D, setUse2D] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   const onContextLost = useCallback(() => setUse2D(true), []);
+  const readySent = useRef(false);
 
   useEffect(() => {
     const applyOffline = () => {
@@ -553,15 +553,34 @@ export default function InteractiveMannequin({
     };
   }, []);
 
+  useEffect(() => {
+    // 2D fallback still unlocks narrative so titles aren't blocked forever.
+    if (use2D && !readySent.current) {
+      readySent.current = true;
+      setSceneReady(true);
+      onReady?.();
+    }
+  }, [use2D, onReady]);
+
+  const handleReady = useCallback(() => {
+    if (readySent.current) return;
+    readySent.current = true;
+    setSceneReady(true);
+    onReady?.();
+  }, [onReady]);
+
   return (
-    <div
+    <motion.div
       className={cn(
-        "relative h-full min-h-[400px] w-full overflow-hidden",
+        "relative h-full min-h-[400px] w-full overflow-hidden bg-black",
         className,
       )}
       role="img"
-      aria-label="Interactive mannequin. Tap a glowing region to open its measurement lesson."
+      aria-label="Interactive mannequin. Scroll to fly the camera around the dress form, or tap a glowing region to open its measurement lesson."
+      animate={{ opacity: dismantling ? 0 : 1 }}
+      transition={{ duration: dismantling ? 0.22 : 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
+      <CinematicLoader dismiss={sceneReady || dismantling} />
       {use2D ? (
         <Mannequin2DFallback
           message={
@@ -573,10 +592,17 @@ export default function InteractiveMannequin({
       ) : (
         <MannequinWebGLBoundary>
           <div className="relative h-full min-h-[400px] w-full">
-            <MannequinCanvas onContextLost={onContextLost} />
+            <Suspense fallback={<CinematicLoader />}>
+              <MannequinCanvas
+                onContextLost={onContextLost}
+                scrollProgress={scrollProgress}
+                onReady={handleReady}
+                dismantling={dismantling}
+              />
+            </Suspense>
           </div>
         </MannequinWebGLBoundary>
       )}
-    </div>
+    </motion.div>
   );
 }

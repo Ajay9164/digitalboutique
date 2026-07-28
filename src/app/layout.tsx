@@ -7,7 +7,7 @@ import {
   APP_NAME,
   APP_TITLE_TEMPLATE,
 } from "@/lib/constants";
-import { fontDisplay, fontSans } from "@/lib/fonts";
+import { fontCinema, fontDisplay, fontSans } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -73,7 +73,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fontSans.variable} ${fontDisplay.variable} dark h-full antialiased`}
+      className={`${fontSans.variable} ${fontDisplay.variable} ${fontCinema.variable} dark h-full antialiased`}
     >
       <body className="min-h-dvh bg-background font-sans text-foreground">
         <AppProviders>

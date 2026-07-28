@@ -14,6 +14,14 @@ const PwaInstallBanner = dynamic(
   { ssr: false },
 );
 
+const CurtainDropOverlay = dynamic(
+  () =>
+    import("@/components/layout/curtain-drop-overlay").then(
+      (m) => m.CurtainDropOverlay,
+    ),
+  { ssr: false },
+);
+
 type AppShellProps = {
   children: React.ReactNode;
 };
@@ -46,6 +54,7 @@ export function AppShell({ children }: AppShellProps) {
       <VoiceMentorFab />
       <DeveloperFooter />
       <BottomNav />
+      <CurtainDropOverlay />
     </div>
   );
 }

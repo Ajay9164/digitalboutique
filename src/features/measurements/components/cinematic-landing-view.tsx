@@ -92,7 +92,7 @@ function FullBleedCinema({ dismantling, cinemaMounted }: CinemaScrollProps) {
             description="WebGL may be unavailable. Retry or open Measurements from the nav."
           >
             <InteractiveMannequin
-              className="h-full w-full touch-none"
+              className="h-full w-full"
               scrollProgress={
                 reduceMotion || dismantling ? undefined : smoothProgress
               }
@@ -167,7 +167,7 @@ function FullBleedCinema({ dismantling, cinemaMounted }: CinemaScrollProps) {
           ) : (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
               <p className="text-center font-sans text-[11px] font-light tracking-wide text-white/45">
-                Drag to rotate · Scroll to zoom
+                Drag to rotate · Scroll the page to explore
               </p>
             </div>
           )}

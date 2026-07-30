@@ -79,7 +79,7 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fontSans.variable} ${fontDisplay.variable} ${fontCinema.variable} h-full antialiased`}
+      className={`${fontSans.variable} ${fontDisplay.variable} ${fontCinema.variable} antialiased`}
     >
       <body className="min-h-dvh bg-background font-sans text-foreground">
         <AppProviders>

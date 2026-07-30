@@ -11,7 +11,7 @@ export default function AppTemplate({
 }>) {
   return (
     <PageTransition>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      {children}
     </PageTransition>
   );
 }

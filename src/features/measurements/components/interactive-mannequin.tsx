@@ -477,7 +477,8 @@ function MannequinCanvas({
 
   return (
     <Canvas
-      className="absolute inset-0 h-full w-full touch-none"
+      className="absolute inset-0 h-full w-full touch-pan-y"
+      style={{ touchAction: "pan-y" }}
       shadows="percentage"
       // Cap DPR to protect scroll cinema from dropped frames on HiDPI.
       dpr={[1, 1.15]}
@@ -528,8 +529,8 @@ function MannequinCanvas({
         <OrbitControls
           makeDefault
           enabled={!cinemaEnabled}
-          enablePan={!cinemaEnabled}
-          enableZoom={!cinemaEnabled}
+          enablePan={false}
+          enableZoom={false}
           enableRotate={!cinemaEnabled}
           enableDamping
           dampingFactor={0.08}
@@ -617,7 +618,7 @@ export default function InteractiveMannequin({
         />
       ) : (
         <MannequinWebGLBoundary>
-          <div className="relative h-full min-h-0 w-full">
+          <div className="relative h-full min-h-0 w-full touch-pan-y [&_canvas]:!touch-pan-y">
             <Suspense fallback={<CinematicLoader />}>
               <MannequinCanvas
                 onContextLost={onContextLost}

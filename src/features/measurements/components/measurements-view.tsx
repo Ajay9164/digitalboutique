@@ -92,13 +92,13 @@ function DashboardMannequinStage({ dismantling }: { dismantling: boolean }) {
           description="WebGL may be unavailable. Retry or use the region chips below."
         >
           <InteractiveMannequin
-            className="absolute inset-0 touch-none"
+            className="absolute inset-0"
             dismantling={dismantling}
           />
         </FeatureErrorBoundary>
       </div>
       <p className="border-t border-champagne/12 px-4 py-3 text-center font-sans text-[11px] font-light tracking-wide text-muted-foreground">
-        Drag to rotate · Scroll to zoom · Tap a glowing region to open its lesson
+        Drag to rotate · Tap a glowing region to open its lesson
       </p>
     </motion.div>
   );
@@ -138,7 +138,7 @@ export function MeasurementsView() {
   }, [selectedId, reduceMotion]);
 
   return (
-    <div className="flex w-full flex-col gap-6 pb-8">
+    <div className="flex w-full flex-col gap-6 pb-40">
       <JourneyGuideBanner feature="measurements" />
       <PageHeader
         eyebrow="Module-wise academy"

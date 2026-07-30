@@ -36,7 +36,7 @@ export function StudioView() {
   }, [hydrate]);
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-40">
       <JourneyGuideBanner feature="studio" />
       <PageHeader
         eyebrow="Atelier"

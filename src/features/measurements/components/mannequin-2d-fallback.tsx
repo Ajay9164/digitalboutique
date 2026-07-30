@@ -59,7 +59,8 @@ export function Mannequin2DFallback({
 
       <svg
         viewBox="0 0 200 220"
-        className="h-[min(42vh,360px)] w-full max-w-sm touch-none"
+        className="h-[min(42vh,360px)] w-full max-w-sm"
+        style={{ touchAction: "pan-y" }}
         aria-hidden={false}
       >
         <defs>

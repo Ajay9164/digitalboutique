@@ -78,7 +78,7 @@ export function DraftLearningView() {
   const lessonTotal = CONSTRUCTION_STEPS.length;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-40">
       <JourneyGuideBanner feature="drafts" />
       <PageHeader
         eyebrow="Pattern craft"

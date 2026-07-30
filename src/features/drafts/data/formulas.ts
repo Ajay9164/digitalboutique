@@ -109,7 +109,7 @@ export const FORMULAS: FormulaGuide[] = [
   {
     id: "shoulder-drop",
     label: "Shoulder Drop",
-    formula: "2.5 cm (standard)",
+    formula: "{{cm:2.5}} (standard)",
     description:
       "How far the outer shoulder falls below the neck point. Creates the natural slope of the shoulder seam.",
     compute: () => 2.5,
@@ -145,13 +145,13 @@ export const FORMULAS: FormulaGuide[] = [
     label: "Ease Allowance",
     formula: "Chosen working ease",
     description:
-      "Extra room beyond the body so the garment can be worn and moved in. Blouses typically use 2–5 cm on the bust.",
+      "Extra room beyond the body so the garment can be worn and moved in. Blouses typically use {{rangeCm:2-5}} on the bust.",
     compute: (_body, inputs) => inputs.bustEase,
   },
   {
     id: "seam-allowance",
     label: "Seam Allowance",
-    formula: "Usually 1 cm",
+    formula: "Usually {{cm:1}}",
     description:
       "Fabric beyond the stitch line. Drafting lines are net; seam allowance is added when cutting.",
     compute: (_body, inputs) => inputs.seamAllowance,

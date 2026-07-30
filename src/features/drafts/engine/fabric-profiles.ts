@@ -31,7 +31,7 @@ export const FABRIC_PROFILES: Record<FabricId, FabricProfile> = {
     seamAllowanceDelta: 0.25,
     bustEaseDelta: 0,
     description:
-      "+3% pre-shrink on block lengths & widths, +0.25 cm seam allowance for stable woven cotton.",
+      "+3% pre-shrink on block lengths & widths, +{{cm:0.25}} seam allowance for stable woven cotton.",
   },
   silk: {
     id: "silk",
@@ -40,7 +40,7 @@ export const FABRIC_PROFILES: Record<FabricId, FabricProfile> = {
     seamAllowanceDelta: 0.5,
     bustEaseDelta: 1,
     description:
-      "+1% dimensional ease, +0.5 cm seam allowance for slip, +1 cm bust ease for fluid drape.",
+      "+1% dimensional ease, +{{cm:0.5}} seam allowance for slip, +{{cm:1}} bust ease for fluid drape.",
   },
 };
 
@@ -96,16 +96,15 @@ export function applyFabricAdjustments(
   const fabricResult: CalculationResult = {
     id: "fabric",
     label: `Smart Fabric · ${profile.label}`,
-    formula: `${Math.round((f - 1) * 100)}% shrink · SA +${profile.seamAllowanceDelta} cm`,
+    formula: `${Math.round((f - 1) * 100)}% shrink · SA +{{cm:${profile.seamAllowanceDelta}}}`,
     value: seamAllowance,
-    unit: "cm",
     explanation: profile.description,
     breakdown: [
-      { label: "Shrinkage factor", value: `×${f}` },
-      { label: "SA delta", value: `+${profile.seamAllowanceDelta} cm` },
-      { label: "Bust ease delta", value: `+${profile.bustEaseDelta} cm` },
-      { label: "Adjusted SA", value: `${seamAllowance} cm` },
-      { label: "Adjusted bust¼", value: `${bustQuarter} cm` },
+      { label: "Shrinkage factor", text: `×${f}` },
+      { label: "SA delta", cm: profile.seamAllowanceDelta },
+      { label: "Bust ease delta", cm: profile.bustEaseDelta },
+      { label: "Adjusted SA", cm: seamAllowance },
+      { label: "Adjusted bust¼", cm: bustQuarter },
     ],
   };
 
@@ -120,7 +119,7 @@ export function applyFabricAdjustments(
           explanation: `${row.explanation} Smart Fabric (${profile.label}): ${profile.description}`,
           breakdown: [
             ...row.breakdown,
-            { label: `${profile.label} SA`, value: `${seamAllowance} cm` },
+            { label: `${profile.label} SA`, cm: seamAllowance },
           ],
         };
       }
@@ -130,12 +129,12 @@ export function applyFabricAdjustments(
           value: bustQuarter,
           explanation: `${row.explanation} Adjusted for ${profile.label} (shrink ×${f}${
             profile.bustEaseDelta
-              ? `, +${profile.bustEaseDelta} cm ease`
+              ? `, +{{cm:${profile.bustEaseDelta}}} ease`
               : ""
           }).`,
           breakdown: [
             ...row.breakdown,
-            { label: `${profile.label} bust¼`, value: `${bustQuarter} cm` },
+            { label: `${profile.label} bust¼`, cm: bustQuarter },
           ],
         };
       }
@@ -145,7 +144,7 @@ export function applyFabricAdjustments(
           value: waistQuarter,
           breakdown: [
             ...row.breakdown,
-            { label: `${profile.label} waist¼`, value: `${waistQuarter} cm` },
+            { label: `${profile.label} waist¼`, cm: waistQuarter },
           ],
         };
       }
@@ -157,7 +156,7 @@ export function applyFabricAdjustments(
             ...row.breakdown,
             {
               label: `${profile.label} armhole`,
-              value: `${adjustedDraft.armholeDepth} cm`,
+              cm: adjustedDraft.armholeDepth,
             },
           ],
         };
@@ -168,7 +167,7 @@ export function applyFabricAdjustments(
           value: dartIntake,
           breakdown: [
             ...row.breakdown,
-            { label: `${profile.label} intake`, value: `${dartIntake} cm` },
+            { label: `${profile.label} intake`, cm: dartIntake },
           ],
         };
       }
@@ -180,7 +179,7 @@ export function applyFabricAdjustments(
             ...row.breakdown,
             {
               label: `${profile.label} bust ease`,
-              value: `${adjustedDraft.bustEase} cm`,
+              cm: adjustedDraft.bustEase,
             },
           ],
         };

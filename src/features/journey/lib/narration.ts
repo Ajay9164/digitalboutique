@@ -25,7 +25,7 @@ export function disposeSpeechSynthesis(): void {
 
 export function speakText(
   text: string,
-  options?: { rate?: number; pitch?: number; lang?: string },
+  options?: { rate?: number; pitch?: number; lang?: string; volume?: number },
 ): void {
   if (!text.trim() || !isSpeechSupported()) return;
   stopNarration();
@@ -33,6 +33,8 @@ export function speakText(
   utterance.rate = options?.rate ?? 0.95;
   utterance.pitch = options?.pitch ?? 1;
   utterance.lang = options?.lang ?? "en-US";
+  // Volume 0–1 is relative to the device master volume — never override system mute.
+  utterance.volume = Math.min(1, Math.max(0, options?.volume ?? 1));
   window.speechSynthesis.speak(utterance);
 }
 

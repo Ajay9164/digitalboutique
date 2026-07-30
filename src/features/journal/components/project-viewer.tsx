@@ -72,7 +72,7 @@ export function ProjectViewer({
         </div>
       </header>
 
-      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-5 pb-10">
         {(project.fabricPhoto || project.draftImage) && (
           <div className="grid gap-3 sm:grid-cols-2">
             {project.fabricPhoto ? (

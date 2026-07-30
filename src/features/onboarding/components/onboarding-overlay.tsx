@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/user-store";
+import { useShallow } from "zustand/react/shallow";
 
 /**
  * First-time gateway — full-viewport navy glass overlay asking for a name
@@ -13,9 +15,13 @@ import { useUserStore } from "@/stores/user-store";
 export function OnboardingOverlay() {
   const reduceMotion = useReducedMotion();
   const inputId = useId();
-  const hydrated = useUserStore((s) => s.hydrated);
-  const hasCompletedOnboarding = useUserStore((s) => s.hasCompletedOnboarding);
-  const completeOnboarding = useUserStore((s) => s.completeOnboarding);
+  const { hydrated, hasCompletedOnboarding, completeOnboarding } = useUserStore(
+    useShallow((s) => ({
+      hydrated: s.hydrated,
+      hasCompletedOnboarding: s.hasCompletedOnboarding,
+      completeOnboarding: s.completeOnboarding,
+    })),
+  );
   const [name, setName] = useState("");
 
   const open = hydrated && !hasCompletedOnboarding;
@@ -99,7 +105,7 @@ export function OnboardingOverlay() {
               id={`${inputId}-title`}
               className="font-cinema mt-3 text-xl leading-snug tracking-[0.08em] text-foreground sm:text-2xl"
             >
-              Welcome to the Digital Atelier. What is your name?
+              Welcome to your Digital Atelier. What is your name?
             </h2>
             <p className="mt-3 font-sans text-sm font-light leading-relaxed text-muted-foreground">
               We keep this offline on your device — so the atelier greets you

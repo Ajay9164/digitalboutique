@@ -17,21 +17,41 @@ import {
   stepLineVisibility,
 } from "@/features/drafts/lib/draft-geometry";
 import { useDraftLearningStore } from "@/stores/draft-learning-store";
-import { roundCm } from "@/features/drafts/data/formulas";
+import { useUnit } from "@/hooks/use-unit";
+import {
+  formatFromCm,
+  resolveMeasureLines,
+  resolveMeasureTemplate,
+} from "@/utils/units";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 export function ConstructionLesson() {
-  const stepIndex = useDraftLearningStore((s) => s.stepIndex);
-  const completedSteps = useDraftLearningStore((s) => s.completedSteps);
-  const lessonBody = useDraftLearningStore((s) => s.lessonBody);
-  const lessonInputs = useDraftLearningStore((s) => s.lessonInputs);
-  const nextStep = useDraftLearningStore((s) => s.nextStep);
-  const prevStep = useDraftLearningStore((s) => s.prevStep);
-  const goToStep = useDraftLearningStore((s) => s.goToStep);
-  const markStepComplete = useDraftLearningStore((s) => s.markStepComplete);
+  const { unit } = useUnit();
+  const {
+    stepIndex,
+    completedSteps,
+    lessonBody,
+    lessonInputs,
+    nextStep,
+    prevStep,
+    goToStep,
+    markStepComplete,
+  } = useDraftLearningStore(
+    useShallow((s) => ({
+      stepIndex: s.stepIndex,
+      completedSteps: s.completedSteps,
+      lessonBody: s.lessonBody,
+      lessonInputs: s.lessonInputs,
+      nextStep: s.nextStep,
+      prevStep: s.prevStep,
+      goToStep: s.goToStep,
+      markStepComplete: s.markStepComplete,
+    })),
+  );
 
   const step = CONSTRUCTION_STEPS[stepIndex];
   const geometry = useMemo(
@@ -92,10 +112,11 @@ export function ConstructionLesson() {
       </nav>
 
       <DraftBoard
-        key={step.id}
+        key={`${step.id}-${unit}`}
         geometry={geometry}
         visible={visible}
         activeStep={step.id}
+        unit={unit}
         premiumGrid
       />
 
@@ -115,7 +136,9 @@ export function ConstructionLesson() {
             <h2 className="font-display text-2xl font-semibold tracking-tight">
               {step.label}
             </h2>
-            <p className="text-sm font-medium text-primary">{step.formulaHint}</p>
+            <p className="text-sm font-medium text-primary">
+              {resolveMeasureTemplate(step.formulaHint, unit)}
+            </p>
           </header>
 
           <section aria-label="Why this line exists" className="space-y-2">
@@ -138,7 +161,7 @@ export function ConstructionLesson() {
               How to draw it
             </h3>
             <ol className="list-decimal space-y-1.5 pl-12 text-sm leading-relaxed text-muted-foreground marker:font-semibold marker:text-primary">
-              {step.howItIsDrawn.map((line) => (
+              {resolveMeasureLines(step.howItIsDrawn, unit).map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ol>
@@ -161,17 +184,14 @@ export function ConstructionLesson() {
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="text-sm font-semibold">{formula.label}</p>
                       <p className="font-display text-lg font-semibold tabular-nums text-primary">
-                        {roundCm(formulaValues[formula.id] ?? 0)}
-                        <span className="ml-1 text-xs font-medium text-muted-foreground">
-                          cm
-                        </span>
+                        {formatFromCm(formulaValues[formula.id] ?? 0, unit)}
                       </p>
                     </div>
                     <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      {formula.formula}
+                      {resolveMeasureTemplate(formula.formula, unit)}
                     </p>
                     <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                      {formula.description}
+                      {resolveMeasureTemplate(formula.description, unit)}
                     </p>
                   </li>
                 ))}
@@ -235,7 +255,7 @@ export function ConstructionLesson() {
             <div key={label} className="rounded-xl bg-muted/40 px-2.5 py-2">
               <dt className="text-muted-foreground">{label}</dt>
               <dd className="font-semibold tabular-nums">
-                {value} cm
+                {formatFromCm(value, unit)}
               </dd>
             </div>
           ))}

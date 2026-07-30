@@ -15,15 +15,24 @@ export type CalculationId =
   | "seam-allowance"
   | "fabric";
 
+/** Breakdown cell — lengths stay in cm; UI formats via `formatFromCm`. */
+export type CalculationBreakdownRow = {
+  label: string;
+  /** Length in centimetres (engine storage). */
+  cm?: number;
+  /** Non-numeric note (e.g. construction landmark). */
+  text?: string;
+};
+
 export type CalculationResult = {
   id: CalculationId;
   label: string;
+  /** May include `{{cm:…}}` / `{{rangeCm:…}}` tokens resolved at display time. */
   formula: string;
+  /** Result length in centimetres. */
   value: number;
-  unit: "cm";
   explanation: string;
-  /** Intermediate numbers shown in the explanation card. */
-  breakdown: Array<{ label: string; value: string }>;
+  breakdown: CalculationBreakdownRow[];
 };
 
 export type EngineCalculations = {
@@ -80,14 +89,13 @@ export function computeEngineCalculations(
       label: "Bust ÷ 4",
       formula: "(Bust + Ease) ÷ 4",
       value: roundCm(bustQuarter),
-      unit: "cm",
       explanation:
         "Adds bust ease first, then quarters the result. That width is half of the front (or back) at the bust line on a two-piece draft.",
       breakdown: [
-        { label: "Bust", value: `${values.bust} cm` },
-        { label: "Bust ease", value: `${values.bustEase} cm` },
-        { label: "Sum", value: `${roundCm(bustWithEase)} cm` },
-        { label: "÷ 4", value: `${roundCm(bustQuarter)} cm` },
+        { label: "Bust", cm: values.bust },
+        { label: "Bust ease", cm: values.bustEase },
+        { label: "Sum", cm: roundCm(bustWithEase) },
+        { label: "÷ 4", cm: roundCm(bustQuarter) },
       ],
     },
     {
@@ -95,14 +103,13 @@ export function computeEngineCalculations(
       label: "Waist ÷ 4",
       formula: "(Waist + Ease) ÷ 4",
       value: roundCm(waistQuarter),
-      unit: "cm",
       explanation:
         "Same quartering logic at the waist. Compared with Bust ÷ 4, it reveals how much fabric must be removed as darts.",
       breakdown: [
-        { label: "Waist", value: `${values.waist} cm` },
-        { label: "Waist ease", value: `${values.waistEase} cm` },
-        { label: "Sum", value: `${roundCm(waistWithEase)} cm` },
-        { label: "÷ 4", value: `${roundCm(waistQuarter)} cm` },
+        { label: "Waist", cm: values.waist },
+        { label: "Waist ease", cm: values.waistEase },
+        { label: "Sum", cm: roundCm(waistWithEase) },
+        { label: "÷ 4", cm: roundCm(waistQuarter) },
       ],
     },
     {
@@ -110,14 +117,13 @@ export function computeEngineCalculations(
       label: "Hip ÷ 4",
       formula: "(Hip + Ease) ÷ 4",
       value: roundCm(hipQuarter),
-      unit: "cm",
       explanation:
         "Sets the lower block width so longer blouses and kurtis clear the seat. Critical whenever the hem falls at or below the hip.",
       breakdown: [
-        { label: "Hip", value: `${values.hip} cm` },
-        { label: "Hip ease", value: `${values.hipEase} cm` },
-        { label: "Sum", value: `${roundCm(hipWithEase)} cm` },
-        { label: "÷ 4", value: `${roundCm(hipQuarter)} cm` },
+        { label: "Hip", cm: values.hip },
+        { label: "Hip ease", cm: values.hipEase },
+        { label: "Sum", cm: roundCm(hipWithEase) },
+        { label: "÷ 4", cm: roundCm(hipQuarter) },
       ],
     },
     {
@@ -125,27 +131,25 @@ export function computeEngineCalculations(
       label: "Neck Width",
       formula: "Neck ÷ 6 + 0.5",
       value: roundCm(neckWidth),
-      unit: "cm",
       explanation:
         "A classic neckline rule: one-sixth of the neck girth plus a small constant places the shoulder-neck point so the neckline neither chokes nor slides off.",
       breakdown: [
-        { label: "Neck", value: `${values.neck} cm` },
-        { label: "÷ 6", value: `${roundCm(values.neck / 6)} cm` },
-        { label: "+ 0.5", value: `${roundCm(neckWidth)} cm` },
-        { label: "Front depth", value: `${roundCm(neckDepthFront)} cm` },
+        { label: "Neck", cm: values.neck },
+        { label: "÷ 6", cm: roundCm(values.neck / 6) },
+        { label: "+ 0.5", cm: roundCm(neckWidth) },
+        { label: "Front depth", cm: roundCm(neckDepthFront) },
       ],
     },
     {
       id: "shoulder-drop",
       label: "Shoulder Drop",
-      formula: "2.5 cm (standard)",
+      formula: "{{cm:2.5}} (standard)",
       value: roundCm(shoulderDrop),
-      unit: "cm",
       explanation:
-        "How far the outer shoulder sits below the neck point. 2.5 cm is a balanced teaching default; square shoulders use less, sloping shoulders use more.",
+        "How far the outer shoulder sits below the neck point. {{cm:2.5}} is a balanced teaching default; square shoulders use less, sloping shoulders use more.",
       breakdown: [
-        { label: "Standard drop", value: "2.5 cm" },
-        { label: "Shoulder length", value: `${values.shoulder} cm` },
+        { label: "Standard drop", cm: 2.5 },
+        { label: "Shoulder length", cm: values.shoulder },
       ],
     },
     {
@@ -153,12 +157,11 @@ export function computeEngineCalculations(
       label: "Armhole",
       formula: "Bust ÷ 4 − 1.5",
       value: roundCm(armholeDepth),
-      unit: "cm",
       explanation:
         "Armhole (scye) depth from the shoulder point to the underarm. Derived from bust so the opening scales with the figure; the sleeve cap must match this curve.",
       breakdown: [
-        { label: "Bust ÷ 4", value: `${roundCm(values.bust / 4)} cm` },
-        { label: "− 1.5", value: `${roundCm(armholeDepth)} cm` },
+        { label: "Bust ÷ 4", cm: roundCm(values.bust / 4) },
+        { label: "− 1.5", cm: roundCm(armholeDepth) },
       ],
     },
     {
@@ -166,13 +169,12 @@ export function computeEngineCalculations(
       label: "Princess",
       formula: "Apex depth + Shoulder ÷ 2",
       value: roundCm(princess),
-      unit: "cm",
       explanation:
         "Approximates the princess-seam path from mid-shoulder over the apex. Used when shaping with panels instead of (or alongside) waist darts.",
       breakdown: [
-        { label: "Apex depth", value: `${values.apexDepth} cm` },
-        { label: "Shoulder ÷ 2", value: `${roundCm(values.shoulder / 2)} cm` },
-        { label: "Princess", value: `${roundCm(princess)} cm` },
+        { label: "Apex depth", cm: values.apexDepth },
+        { label: "Shoulder ÷ 2", cm: roundCm(values.shoulder / 2) },
+        { label: "Princess", cm: roundCm(princess) },
       ],
     },
     {
@@ -180,12 +182,11 @@ export function computeEngineCalculations(
       label: "Sleeve",
       formula: "Sleeve length (body)",
       value: roundCm(sleeve),
-      unit: "cm",
       explanation:
         "Taken from the body chart and drawn from the outer shoulder along the sleeve grain. Ease for elbow bend is added in the sleeve draft, not here.",
       breakdown: [
-        { label: "Measured length", value: `${values.sleeveLength} cm` },
-        { label: "Starts at", value: "Shoulder bone point" },
+        { label: "Measured length", cm: values.sleeveLength },
+        { label: "Starts at", text: "Shoulder bone point" },
       ],
     },
     {
@@ -193,14 +194,13 @@ export function computeEngineCalculations(
       label: "Darts",
       formula: "Bust¼ − Waist¼",
       value: roundCm(dartIntake),
-      unit: "cm",
       explanation:
         "The surplus between bust and waist quarters becomes dart intake. The dart tip stops short of the apex so the shaping melts into the bust curve.",
       breakdown: [
-        { label: "Bust¼", value: `${roundCm(bustQuarter)} cm` },
-        { label: "Waist¼", value: `${roundCm(waistQuarter)} cm` },
-        { label: "Intake", value: `${roundCm(dartIntake)} cm` },
-        { label: "Dart length", value: `${roundCm(dartLength)} cm` },
+        { label: "Bust¼", cm: roundCm(bustQuarter) },
+        { label: "Waist¼", cm: roundCm(waistQuarter) },
+        { label: "Intake", cm: roundCm(dartIntake) },
+        { label: "Dart length", cm: roundCm(dartLength) },
       ],
     },
     {
@@ -208,13 +208,12 @@ export function computeEngineCalculations(
       label: "Ease",
       formula: "Chosen working ease",
       value: roundCm(easeTotal),
-      unit: "cm",
       explanation:
         "Working ease is room beyond the body so the garment can be worn and moved in. Bust ease is the primary figure shown; waist and hip ease are applied in their own quarters.",
       breakdown: [
-        { label: "Bust ease", value: `${values.bustEase} cm` },
-        { label: "Waist ease", value: `${values.waistEase} cm` },
-        { label: "Hip ease", value: `${values.hipEase} cm` },
+        { label: "Bust ease", cm: values.bustEase },
+        { label: "Waist ease", cm: values.waistEase },
+        { label: "Hip ease", cm: values.hipEase },
       ],
     },
     {
@@ -222,12 +221,11 @@ export function computeEngineCalculations(
       label: "Seam Allowance",
       formula: "Chosen SA",
       value: roundCm(seamAllowance),
-      unit: "cm",
       explanation:
         "Fabric beyond the stitch line. Construction lines on the board are net (finished) edges; add seam allowance when cutting the cloth.",
       breakdown: [
-        { label: "Seam allowance", value: `${values.seamAllowance} cm` },
-        { label: "Applied at", value: "Cutting stage" },
+        { label: "Seam allowance", cm: values.seamAllowance },
+        { label: "Applied at", text: "Cutting stage" },
       ],
     },
   ];

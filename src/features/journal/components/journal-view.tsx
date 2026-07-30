@@ -75,7 +75,7 @@ function JournalUnlockedContent() {
   }, [statusMessage, errorMessage, clearMessages]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {!overlayOpen ? <JournalFab /> : null}
 
       <JourneyGuideBanner feature="journal" />

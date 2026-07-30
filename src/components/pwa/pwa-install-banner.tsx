@@ -42,7 +42,7 @@ export function PwaInstallBanner() {
 
   return (
     <div
-      className="glass-panel fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-lg items-center gap-3 rounded-2xl p-3 shadow-lg md:max-w-xl lg:max-w-2xl"
+      className="glass-panel fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-lg items-center gap-3 rounded-2xl p-3 shadow-lg backdrop-blur-xl md:max-w-xl lg:max-w-2xl"
       role="dialog"
       aria-label="Install Tailor"
     >

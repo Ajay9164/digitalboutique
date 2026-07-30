@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { parseTailoringQuery } from "@/lib/speech/mentor-intent";
+import {
+  extractNumbers,
+  parseTailoringQuery,
+} from "@/lib/speech/mentor-intent";
+
+describe("extractNumbers", () => {
+  it("pulls integers and decimals via /\\d+(\\.\\d+)?/g", () => {
+    expect(extractNumbers("armhole for 36.5 bust")).toEqual([36.5]);
+    expect(extractNumbers("try 28 then 30")).toEqual([28, 30]);
+    expect(extractNumbers("no digits here")).toEqual([]);
+  });
+});
 
 describe("parseTailoringQuery", () => {
   it("calculates armhole depth for a 36 bust", () => {
@@ -10,6 +21,12 @@ describe("parseTailoringQuery", () => {
     expect(result.spoken).toBe(
       "For a 36 bust, the standard armhole depth is 7.5 inches.",
     );
+  });
+
+  it("matches fuzzy arm hole spacing", () => {
+    const result = parseTailoringQuery("arm hole for 40");
+    expect(result.kind).toBe("armhole");
+    expect(result.spoken).toContain("8.5 inches");
   });
 
   it("calculates chest line with ease for bust/chest + number", () => {
@@ -28,10 +45,20 @@ describe("parseTailoringQuery", () => {
     );
   });
 
-  it("never says it did not understand — smart tip fallback", () => {
+  it("asks a clarifying question when a number has no keyword", () => {
+    const result = parseTailoringQuery("calculate for 36 please");
+    expect(result.kind).toBe("clarify");
+    expect(result.spoken).toBe(
+      "I heard 36. Did you want the armhole, bust, or waist calculation for that?",
+    );
+  });
+
+  it("never says it did not understand — tip fallback with no numbers", () => {
     const result = parseTailoringQuery("hello there tailor");
     expect(result.kind).toBe("tip");
-    expect(result.spoken.toLowerCase()).not.toMatch(/didn'?t understand|did not understand|i did not catch/i);
+    expect(result.spoken.toLowerCase()).not.toMatch(
+      /didn'?t understand|did not understand|i did not catch/i,
+    );
     expect(result.spoken.length).toBeGreaterThan(10);
   });
 

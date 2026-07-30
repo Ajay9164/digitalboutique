@@ -4,6 +4,8 @@ import {
   computeDraftingMeasurements,
   roundCm,
 } from "@/features/drafts/data/formulas";
+import type { UnitSystem } from "@/stores/unit-store";
+import { cmToDisplayNumber } from "@/utils/units";
 
 export type PracticeFieldId =
   | "bustQuarter"
@@ -130,21 +132,31 @@ export function getCorrectAnswers(
   };
 }
 
-/** Accept answers within 0.15 cm (rounding forgiveness). */
-export function isAnswerCorrect(guess: string, correct: number): boolean {
+/** Accept answers within 0.15 of the display-unit value (rounding forgiveness). */
+export function isAnswerCorrect(
+  guess: string,
+  correctCm: number,
+  unit: UnitSystem = "cm",
+): boolean {
   const parsed = Number.parseFloat(guess);
   if (Number.isNaN(parsed)) return false;
-  return Math.abs(parsed - correct) <= 0.15;
+  const correctDisplay = cmToDisplayNumber(correctCm, unit);
+  return Math.abs(parsed - correctDisplay) <= 0.15;
 }
 
 export function scoreGuesses(
   guesses: PracticeGuesses,
   answers: PracticeAnswers,
+  unit: UnitSystem = "cm",
 ): { correct: number; total: number; fieldResults: Record<PracticeFieldId, boolean> } {
   const fieldResults = {} as Record<PracticeFieldId, boolean>;
   let correct = 0;
   for (const field of PRACTICE_FIELDS) {
-    const ok = isAnswerCorrect(guesses[field.id] ?? "", answers[field.id]);
+    const ok = isAnswerCorrect(
+      guesses[field.id] ?? "",
+      answers[field.id],
+      unit,
+    );
     fieldResults[field.id] = ok;
     if (ok) correct += 1;
   }

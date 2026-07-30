@@ -20,6 +20,7 @@ import {
   type ControlPointId,
   type Point,
 } from "@/features/drafts/engine/konva-geometry";
+import { useUnit } from "@/hooks/use-unit";
 import { cn } from "@/lib/utils";
 
 export type DraftBoardHandle = {
@@ -68,6 +69,7 @@ function InteractiveDraftBoardInner(
   }: InteractiveDraftBoardProps,
   ref: React.Ref<DraftBoardHandle>,
 ) {
+  const { unit } = useUnit();
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const [size, setSize] = useState({ width: 360, height: 420 });
@@ -79,8 +81,8 @@ function InteractiveDraftBoardInner(
   );
 
   const baseGeo = useMemo(
-    () => buildEngineBoardGeometry(calculations),
-    [calculations],
+    () => buildEngineBoardGeometry(calculations, unit),
+    [calculations, unit],
   );
 
   const [controls, setControls] = useState(() => defaultControlPoints(baseGeo));

@@ -1,22 +1,45 @@
 "use client";
 
+import { useMemo } from "react";
+import { useUnit } from "@/hooks/use-unit";
+import { cmToDisplayNumber, getLabel } from "@/utils/units";
 import { cn } from "@/lib/utils";
 
 type MeasurementRulerProps = {
-  /** Approximate centimetres represented across the short side. */
+  /** Approximate centimetres represented across the short side (storage base). */
   spanCm?: number;
   className?: string;
 };
 
 /**
  * Measurement ruler drawn along the top and left edges of the workspace.
+ * Tick labels follow the global `useUnitStore` unit (in / cm).
  * Scale is relative (teaching aid) — not a calibrated physical ruler.
  */
 export function MeasurementRuler({
   spanCm = 40,
   className,
 }: MeasurementRulerProps) {
-  const ticks = Array.from({ length: spanCm + 1 }, (_, i) => i);
+  const { unit } = useUnit();
+  const label = getLabel(unit);
+
+  const { ticks, spanDisplay, majorEvery } = useMemo(() => {
+    if (unit === "cm") {
+      return {
+        ticks: Array.from({ length: spanCm + 1 }, (_, i) => i),
+        spanDisplay: spanCm,
+        majorEvery: 5,
+      };
+    }
+    // Inches: ~0.5" minor ticks across the same physical span.
+    const spanIn = Math.max(1, Math.round(cmToDisplayNumber(spanCm, "in")));
+    const steps = spanIn * 2; // half-inch ticks
+    return {
+      ticks: Array.from({ length: steps + 1 }, (_, i) => i * 0.5),
+      spanDisplay: spanIn,
+      majorEvery: 1,
+    };
+  }, [spanCm, unit]);
 
   return (
     <div
@@ -26,11 +49,14 @@ export function MeasurementRuler({
       {/* Top ruler */}
       <div className="absolute inset-x-0 top-0 h-5 bg-black/35 text-[8px] text-white backdrop-blur-sm">
         <svg className="h-full w-full" preserveAspectRatio="none">
-          {ticks.map((cm) => {
-            const x = (cm / spanCm) * 100;
-            const major = cm % 5 === 0;
+          {ticks.map((tick) => {
+            const x = (tick / spanDisplay) * 100;
+            const major =
+              unit === "cm"
+                ? tick % majorEvery === 0
+                : Number.isInteger(tick);
             return (
-              <g key={`t-${cm}`}>
+              <g key={`t-${tick}`}>
                 <line
                   x1={`${x}%`}
                   y1={major ? 0 : 10}
@@ -49,7 +75,7 @@ export function MeasurementRuler({
                     textAnchor="middle"
                     opacity="0.9"
                   >
-                    {cm}
+                    {tick}
                   </text>
                 ) : null}
               </g>
@@ -61,11 +87,14 @@ export function MeasurementRuler({
       {/* Left ruler */}
       <div className="absolute inset-y-0 left-0 w-5 bg-black/35 text-[8px] text-white backdrop-blur-sm">
         <svg className="h-full w-full" preserveAspectRatio="none">
-          {ticks.map((cm) => {
-            const y = (cm / spanCm) * 100;
-            const major = cm % 5 === 0;
+          {ticks.map((tick) => {
+            const y = (tick / spanDisplay) * 100;
+            const major =
+              unit === "cm"
+                ? tick % majorEvery === 0
+                : Number.isInteger(tick);
             return (
-              <g key={`l-${cm}`}>
+              <g key={`l-${tick}`}>
                 <line
                   x1={major ? 0 : 10}
                   y1={`${y}%`}
@@ -75,7 +104,7 @@ export function MeasurementRuler({
                   strokeWidth={major ? 1.2 : 0.6}
                   opacity={major ? 0.9 : 0.45}
                 />
-                {major && cm > 0 ? (
+                {major && tick > 0 ? (
                   <text
                     x={3}
                     y={`${y}%`}
@@ -84,7 +113,7 @@ export function MeasurementRuler({
                     opacity="0.85"
                     dominantBaseline="middle"
                   >
-                    {cm}
+                    {tick}
                   </text>
                 ) : null}
               </g>
@@ -94,7 +123,7 @@ export function MeasurementRuler({
       </div>
 
       <span className="absolute bottom-2 right-2 rounded-full bg-black/45 px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-white/90">
-        Relative cm
+        Relative {label}
       </span>
     </div>
   );

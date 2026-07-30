@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -16,27 +17,48 @@ import {
 } from "@/features/drafts/lib/draft-geometry";
 import { PRACTICE_FIELDS, type PracticeFieldId } from "@/features/drafts/lib/practice";
 import { CONSTRUCTION_STEPS } from "@/features/drafts/data/construction-steps";
-import { roundCm } from "@/features/drafts/data/formulas";
 import { useDraftLearningStore } from "@/stores/draft-learning-store";
+import { useUnit } from "@/hooks/use-unit";
+import { formatFromCm, getLabel } from "@/utils/units";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function PracticeMode() {
-  const practiceBody = useDraftLearningStore((s) => s.practiceBody);
-  const practiceInputs = useDraftLearningStore((s) => s.practiceInputs);
-  const practiceGuesses = useDraftLearningStore((s) => s.practiceGuesses);
-  const practiceAnswers = useDraftLearningStore((s) => s.practiceAnswers);
-  const practiceChecked = useDraftLearningStore((s) => s.practiceChecked);
-  const practiceFieldResults = useDraftLearningStore((s) => s.practiceFieldResults);
-  const practiceAttempts = useDraftLearningStore((s) => s.practiceAttempts);
-  const practiceCompletions = useDraftLearningStore((s) => s.practiceCompletions);
-  const practiceBestScore = useDraftLearningStore((s) => s.practiceBestScore);
-  const lastScore = useDraftLearningStore((s) => s.lastScore);
-  const newPracticeRound = useDraftLearningStore((s) => s.newPracticeRound);
-  const setPracticeGuess = useDraftLearningStore((s) => s.setPracticeGuess);
-  const checkPractice = useDraftLearningStore((s) => s.checkPractice);
-  const revealPractice = useDraftLearningStore((s) => s.revealPractice);
+  const { unit, label } = useUnit();
+  const {
+    practiceBody,
+    practiceInputs,
+    practiceGuesses,
+    practiceAnswers,
+    practiceChecked,
+    practiceFieldResults,
+    practiceAttempts,
+    practiceCompletions,
+    practiceBestScore,
+    lastScore,
+    newPracticeRound,
+    setPracticeGuess,
+    checkPractice,
+    revealPractice,
+  } = useDraftLearningStore(
+    useShallow((s) => ({
+      practiceBody: s.practiceBody,
+      practiceInputs: s.practiceInputs,
+      practiceGuesses: s.practiceGuesses,
+      practiceAnswers: s.practiceAnswers,
+      practiceChecked: s.practiceChecked,
+      practiceFieldResults: s.practiceFieldResults,
+      practiceAttempts: s.practiceAttempts,
+      practiceCompletions: s.practiceCompletions,
+      practiceBestScore: s.practiceBestScore,
+      lastScore: s.lastScore,
+      newPracticeRound: s.newPracticeRound,
+      setPracticeGuess: s.setPracticeGuess,
+      checkPractice: s.checkPractice,
+      revealPractice: s.revealPractice,
+    })),
+  );
 
   const geometry = useMemo(
     () => buildDraftGeometry(practiceBody, practiceInputs),
@@ -126,7 +148,9 @@ export function PracticeMode() {
           ).map(([label, value]) => (
             <div key={label} className="rounded-xl bg-muted/45 px-3 py-2">
               <dt className="text-[11px] text-muted-foreground">{label}</dt>
-              <dd className="font-semibold tabular-nums">{value} cm</dd>
+              <dd className="font-semibold tabular-nums">
+                {formatFromCm(value, unit)}
+              </dd>
             </div>
           ))}
         </dl>
@@ -165,10 +189,10 @@ export function PracticeMode() {
                       setPracticeGuess(field.id, event.target.value)
                     }
                     disabled={practiceChecked}
-                    aria-label={`${field.label} in centimetres`}
+                    aria-label={`${field.label} in ${label}`}
                     className="h-10 w-24 rounded-xl border border-border bg-background px-3 text-right text-sm font-semibold tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
-                  <span className="text-xs text-muted-foreground">cm</span>
+                  <span className="text-xs text-muted-foreground">{getLabel(unit)}</span>
                   {practiceChecked ? (
                     result ? (
                       <CheckCircle2
@@ -178,7 +202,7 @@ export function PracticeMode() {
                     ) : (
                       <span className="flex items-center gap-1 text-xs font-semibold text-destructive">
                         <XCircle className="size-4" aria-hidden="true" />
-                        {answer !== undefined ? roundCm(answer) : "—"}
+                        {answer !== undefined ? formatFromCm(answer, unit) : "—"}
                       </span>
                     )
                   ) : null}
@@ -255,6 +279,7 @@ export function PracticeMode() {
             geometry={geometry}
             visible={visible}
             activeStep="hem"
+            unit={unit}
           />
         ) : (
           <div className="flex h-[200px] items-center justify-center rounded-3xl border border-dashed border-border/70 bg-muted/30 text-sm text-muted-foreground">

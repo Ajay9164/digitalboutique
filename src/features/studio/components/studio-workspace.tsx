@@ -8,6 +8,7 @@ import { snapPoint } from "@/features/studio/lib/overlay";
 import { PATTERN_MAP } from "@/features/studio/data/patterns";
 import { useStudioStore } from "@/stores/studio-store";
 import { cn } from "@/lib/utils";
+import { useShallow } from "zustand/react/shallow";
 
 type StudioWorkspaceProps = {
   className?: string;
@@ -59,19 +60,37 @@ export function StudioWorkspace({ className }: StudioWorkspaceProps) {
     originCropH: number;
   } | null>(null);
 
-  const photos = useStudioStore((s) => s.photos);
-  const activePhotoId = useStudioStore((s) => s.activePhotoId);
-  const overlay = useStudioStore((s) => s.overlay);
-  const crop = useStudioStore((s) => s.crop);
-  const tool = useStudioStore((s) => s.tool);
-  const zoom = useStudioStore((s) => s.zoom);
-  const showGrid = useStudioStore((s) => s.showGrid);
-  const showRuler = useStudioStore((s) => s.showRuler);
-  const snapEnabled = useStudioStore((s) => s.snapEnabled);
-  const patternId = useStudioStore((s) => s.patternId);
-  const setOverlay = useStudioStore((s) => s.setOverlay);
-  const setCrop = useStudioStore((s) => s.setCrop);
-  const setZoom = useStudioStore((s) => s.setZoom);
+  const {
+    photos,
+    activePhotoId,
+    overlay,
+    crop,
+    tool,
+    zoom,
+    showGrid,
+    showRuler,
+    snapEnabled,
+    patternId,
+    setOverlay,
+    setCrop,
+    setZoom,
+  } = useStudioStore(
+    useShallow((s) => ({
+      photos: s.photos,
+      activePhotoId: s.activePhotoId,
+      overlay: s.overlay,
+      crop: s.crop,
+      tool: s.tool,
+      zoom: s.zoom,
+      showGrid: s.showGrid,
+      showRuler: s.showRuler,
+      snapEnabled: s.snapEnabled,
+      patternId: s.patternId,
+      setOverlay: s.setOverlay,
+      setCrop: s.setCrop,
+      setZoom: s.setZoom,
+    })),
+  );
 
   const photo = photos.find((item) => item.id === activePhotoId) ?? null;
   const pattern = PATTERN_MAP[patternId];

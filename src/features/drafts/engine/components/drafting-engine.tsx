@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { FileDown, FileImage, Grid3x3, Magnet, Printer } from "lucide-react";
 import type { DraftBoardHandle } from "@/features/drafts/engine/components/interactive-draft-board";
@@ -23,6 +23,9 @@ import {
 } from "@/features/drafts/engine/export";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useUnit } from "@/hooks/use-unit";
+import { formatFromCm } from "@/utils/units";
 import { cn } from "@/lib/utils";
 
 const InteractiveDraftBoard = dynamic(
@@ -36,20 +39,34 @@ const InteractiveDraftBoard = dynamic(
   },
 );
 
+/** Typing stays instant; Konva + formula panel update after this quiet period. */
+const DRAFT_CALC_DEBOUNCE_MS = 180;
+
 export function DraftingEngine({ className }: { className?: string }) {
   const boardRef = useRef<DraftBoardHandle>(null);
+  const { unit } = useUnit();
   const [values, setValues] = useState<EngineFormValues>(DEFAULT_ENGINE_VALUES);
   const [fabric, setFabric] = useState<FabricId | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [exportError, setExportError] = useState<string | null>(null);
 
-  const calculations = applyFabricAdjustments(
-    computeEngineCalculations(values),
-    fabric,
+  const debouncedValues = useDebouncedValue(values, DRAFT_CALC_DEBOUNCE_MS);
+
+  const calculations = useMemo(
+    () =>
+      applyFabricAdjustments(
+        computeEngineCalculations(debouncedValues),
+        fabric,
+      ),
+    [debouncedValues, fabric],
   );
 
-  const withStage = (action: (stage: NonNullable<ReturnType<DraftBoardHandle["getStage"]>>) => void) => {
+  const withStage = (
+    action: (
+      stage: NonNullable<ReturnType<DraftBoardHandle["getStage"]>>,
+    ) => void,
+  ) => {
     const stage = boardRef.current?.getStage();
     if (!stage) {
       setExportError("Draft board is not ready yet.");
@@ -78,7 +95,7 @@ export function DraftingEngine({ className }: { className?: string }) {
         </p>
       </div>
 
-      <MeasurementForm onChange={setValues} />
+      <MeasurementForm values={values} onChange={setValues} />
 
       <SmartFabricSelector value={fabric} onChange={setFabric} />
 
@@ -145,7 +162,7 @@ export function DraftingEngine({ className }: { className?: string }) {
                 calculations.results.map((result) => ({
                   label: result.label,
                   formula: result.formula,
-                  value: `${result.value} ${result.unit}`,
+                  value: formatFromCm(result.value, unit),
                 })),
               ),
             )
@@ -163,7 +180,6 @@ export function DraftingEngine({ className }: { className?: string }) {
       ) : null}
 
       <InteractiveDraftBoard
-        key={JSON.stringify(calculations.draft)}
         ref={boardRef}
         calculations={calculations}
         showGrid={showGrid}

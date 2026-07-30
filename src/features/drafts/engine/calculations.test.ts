@@ -38,6 +38,10 @@ describe("computeEngineCalculations", () => {
   it("exposes labeled results for the calculation panel", () => {
     const result = computeEngineCalculations(base);
     expect(result.results.length).toBeGreaterThan(5);
-    expect(result.results.every((row) => row.unit === "cm")).toBe(true);
+    expect(
+      result.results.every((row) =>
+        row.breakdown.every((cell) => cell.cm != null || cell.text != null),
+      ),
+    ).toBe(true);
   });
 });

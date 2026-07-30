@@ -197,6 +197,14 @@
   font-feature-settings: "liga" on, "kern" on;
 }
 
+/*
+ * Clears floating BottomNav + mic/plus FABs + optional PWA install chip
+ * so the last scrollable controls stay tappable above the chrome.
+ */
+:root {
+  --atelier-chrome-bottom: 11.5rem;
+}
+
 @utility glass-panel {
   position: relative;
   isolation: isolate;
@@ -207,7 +215,7 @@
       color-mix(in oklch, white 8%, transparent) 0%,
       transparent 42%
     ),
-    color-mix(in oklch, var(--card) 88%, black);
+    color-mix(in oklch, var(--card) 72%, transparent);
   backdrop-filter: blur(28px) saturate(1.45);
   -webkit-backdrop-filter: blur(28px) saturate(1.45);
   box-shadow:
@@ -226,7 +234,7 @@
       color-mix(in oklch, white 6%, transparent) 0%,
       transparent 40%
     ),
-    color-mix(in oklch, black 72%, oklch(0.14 0.035 255));
+    color-mix(in oklch, black 58%, transparent);
   box-shadow:
     0 1px 0 color-mix(in oklch, var(--champagne) 20%, transparent) inset,
     0 0 0 1px color-mix(in oklch, black 70%, transparent) inset,
@@ -294,6 +302,22 @@
   50% {
     opacity: 1;
     filter: brightness(1.25);
+  }
+}
+
+@keyframes dev-signature-glow {
+  0%,
+  100% {
+    text-shadow:
+      0 0 8px color-mix(in oklch, var(--champagne) 45%, transparent),
+      0 0 18px color-mix(in oklch, var(--champagne) 28%, transparent);
+    opacity: 0.88;
+  }
+  50% {
+    text-shadow:
+      0 0 14px color-mix(in oklch, var(--champagne) 75%, transparent),
+      0 0 28px color-mix(in oklch, var(--champagne) 45%, transparent);
+    opacity: 1;
   }
 }
 

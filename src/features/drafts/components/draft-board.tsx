@@ -7,6 +7,8 @@ import {
   DRAFT_VIEWBOX,
   type DraftGeometry,
 } from "@/features/drafts/lib/draft-geometry";
+import type { UnitSystem } from "@/stores/unit-store";
+import { formatTeachingMeasure } from "@/utils/units";
 import { cn } from "@/lib/utils";
 
 type DraftBoardProps = {
@@ -16,6 +18,8 @@ type DraftBoardProps = {
   className?: string;
   /** Blueprint-style dual grid for the marking tutorial */
   premiumGrid?: boolean;
+  /** Global atelier unit for chalk formula annotations. */
+  unit?: UnitSystem;
 };
 
 /** Draw-on chalk stroke — 1.5s ease-in-out as specified for Phase 3. */
@@ -31,17 +35,19 @@ const labelTransition = {
   ease: [0.22, 1, 0.36, 1] as const,
 };
 
-const FORMULA_LABELS: Record<ConstructionStepId, string> = {
-  "center-line": "Blouse Length",
-  "bust-line": 'Bust/4 + 1.5"',
-  "waist-line": "Waist/4",
-  neck: "Neck/6 + 0.5\"",
-  shoulder: "Shoulder + Drop",
-  armhole: 'Bust/4 − 1.5"',
-  "side-seam": "Underarm → Hem",
-  darts: "Bust¼ − Waist¼",
-  hem: "Hem Level",
-};
+function formulaLabels(unit: UnitSystem): Record<ConstructionStepId, string> {
+  return {
+    "center-line": "Blouse Length",
+    "bust-line": `Bust/4 + ${formatTeachingMeasure(1.5, unit)}`,
+    "waist-line": "Waist/4",
+    neck: `Neck/6 + ${formatTeachingMeasure(0.5, unit)}`,
+    shoulder: "Shoulder + Drop",
+    armhole: `Bust/4 − ${formatTeachingMeasure(1.5, unit)}`,
+    "side-seam": "Underarm → Hem",
+    darts: "Bust¼ − Waist¼",
+    hem: "Hem Level",
+  };
+}
 
 function DrawPath({
   d,
@@ -86,6 +92,7 @@ function FormulaLabel({
   active,
   reduceMotion,
   anchor = "start",
+  labels,
 }: {
   x: number;
   y: number;
@@ -94,8 +101,11 @@ function FormulaLabel({
   active: boolean;
   reduceMotion?: boolean | null;
   anchor?: "start" | "middle" | "end";
+  labels: Record<ConstructionStepId, string>;
 }) {
   if (!show) return null;
+  const label = labels[stepId];
+  const width = Math.max(54, Math.min(100, label.length * 3.4));
   return (
     <motion.g
       initial={reduceMotion ? false : { opacity: 0, y: 5 }}
@@ -103,9 +113,9 @@ function FormulaLabel({
       transition={reduceMotion ? { duration: 0 } : labelTransition}
     >
       <rect
-        x={anchor === "end" ? x - 52 : anchor === "middle" ? x - 26 : x - 2}
+        x={anchor === "end" ? x - width : anchor === "middle" ? x - width / 2 : x - 2}
         y={y - 9}
-        width={54}
+        width={width}
         height={12}
         rx={3}
         className={
@@ -124,7 +134,7 @@ function FormulaLabel({
           active ? "text-primary" : "text-foreground/75",
         )}
       >
-        {FORMULA_LABELS[stepId]}
+        {label}
       </text>
     </motion.g>
   );
@@ -136,9 +146,11 @@ export function DraftBoard({
   activeStep,
   className,
   premiumGrid = false,
+  unit = "in",
 }: DraftBoardProps) {
   const reduceMotion = useReducedMotion();
   const is = (id: ConstructionStepId) => activeStep === id;
+  const labels = formulaLabels(unit);
   const pathProps = { reduceMotion };
 
   return (
@@ -211,6 +223,7 @@ export function DraftBoard({
           stepId="center-line"
           show={visible["center-line"]}
           active={is("center-line")}
+          labels={labels}
           {...pathProps}
         />
 
@@ -227,6 +240,7 @@ export function DraftBoard({
           stepId="bust-line"
           show={visible["bust-line"]}
           active={is("bust-line")}
+          labels={labels}
           {...pathProps}
         />
         {visible["bust-line"] ? (
@@ -254,6 +268,7 @@ export function DraftBoard({
           stepId="waist-line"
           show={visible["waist-line"]}
           active={is("waist-line")}
+          labels={labels}
           {...pathProps}
         />
 
@@ -269,6 +284,7 @@ export function DraftBoard({
           stepId="neck"
           show={visible.neck}
           active={is("neck")}
+          labels={labels}
           {...pathProps}
         />
 
@@ -285,6 +301,7 @@ export function DraftBoard({
           show={visible.shoulder}
           active={is("shoulder")}
           anchor="end"
+          labels={labels}
           {...pathProps}
         />
 
@@ -301,6 +318,7 @@ export function DraftBoard({
           show={visible.armhole}
           active={is("armhole")}
           anchor="end"
+          labels={labels}
           {...pathProps}
         />
 
@@ -316,6 +334,7 @@ export function DraftBoard({
           stepId="side-seam"
           show={visible["side-seam"]}
           active={is("side-seam")}
+          labels={labels}
           {...pathProps}
         />
 
@@ -348,6 +367,7 @@ export function DraftBoard({
               stepId="darts"
               show
               active={is("darts")}
+              labels={labels}
               {...pathProps}
             />
           </g>
@@ -366,6 +386,7 @@ export function DraftBoard({
           show={visible.hem}
           active={is("hem")}
           anchor="middle"
+          labels={labels}
           {...pathProps}
         />
       </svg>

@@ -4,6 +4,7 @@ export type TailoringQueryKind =
   | "armhole"
   | "chest-line"
   | "waist-dart"
+  | "clarify"
   | "tip";
 
 export type TailoringQueryResult = {
@@ -39,18 +40,22 @@ function pickTip(): string {
   return TAILORING_TIPS[index] ?? TAILORING_TIPS[0];
 }
 
-function firstNumber(digits: string[] | null): number | undefined {
-  if (!digits?.length) return undefined;
-  const value = Number.parseFloat(digits[0]!);
-  return Number.isFinite(value) ? value : undefined;
+/** Extract numeric tokens (integers + decimals) from a spoken transcript. */
+export function extractNumbers(transcript: string): number[] {
+  const matches = transcript.match(/\d+(\.\d+)?/g);
+  if (!matches?.length) return [];
+  return matches
+    .map((raw) => Number.parseFloat(raw))
+    .filter((value) => Number.isFinite(value));
+}
+
+function includesAny(transcript: string, needles: readonly string[]): boolean {
+  return needles.some((needle) => transcript.includes(needle));
 }
 
 function formatInches(value: number): string {
   const rounded = roundCm(value, 2);
-  // Drop trailing .0 for cleaner speech ("7.5" stays, "10.00" → unlikely)
-  const text = Number.isInteger(rounded)
-    ? String(rounded)
-    : String(rounded);
+  const text = Number.isInteger(rounded) ? String(rounded) : String(rounded);
   return `${text} inches`;
 }
 
@@ -64,18 +69,36 @@ function tipResult(spoken: string): TailoringQueryResult {
   };
 }
 
+function clarifyResult(n: number): TailoringQueryResult {
+  const spoken = `I heard ${n}. Did you want the armhole, bust, or waist calculation for that?`;
+  return {
+    kind: "clarify",
+    number: n,
+    title: "Quick clarification",
+    formula: "Clarify intent",
+    spoken,
+    display: spoken,
+  };
+}
+
 /**
  * Regex-driven offline voice engine for drafting formulas.
- * Never replies with "I didn't understand" — falls back to a helpful tip.
+ * Never replies with "I didn't understand" — clarifies or offers a tip.
  */
 export function parseTailoringQuery(raw: string): TailoringQueryResult {
   const transcript = raw.trim().toLowerCase();
-  const numbers = transcript.match(/\d+/g);
-  const n = firstNumber(numbers);
+  const numbers = extractNumbers(transcript);
+  const n = numbers[0];
 
-  const hasArmhole = /\barm\s*-?\s*hole\b|\bscye\b/.test(transcript);
-  const hasChestOrBust = /\bchest\b|\bbust\b/.test(transcript);
-  const hasWaist = /\bwaist\b/.test(transcript);
+  const hasArmhole = includesAny(transcript, [
+    "armhole",
+    "arm hole",
+    "arm-hole",
+    "armholes",
+    "scye",
+  ]);
+  const hasChestOrBust = includesAny(transcript, ["chest", "bust"]);
+  const hasWaist = includesAny(transcript, ["waist"]);
 
   // 1) Armhole depth — Bust ÷ 4 − 1.5
   if (hasArmhole && n !== undefined) {
@@ -137,7 +160,12 @@ export function parseTailoringQuery(raw: string): TailoringQueryResult {
     );
   }
 
-  // Smart fallback — never "I didn't understand"
+  // Smart fallback: number heard, but no drafting keyword → clarify (never "I didn't understand")
+  if (n !== undefined) {
+    return clarifyResult(n);
+  }
+
+  // No numbers → helpful tip instead of an error
   return tipResult(pickTip());
 }
 

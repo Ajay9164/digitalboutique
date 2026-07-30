@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Compass, Cpu, GraduationCap, PencilRuler } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
+import { Compass, Cpu, GraduationCap, ListOrdered, PencilRuler } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { CONSTRUCTION_STEPS } from "@/features/drafts/data/construction-steps";
 import { FORMULAS } from "@/features/drafts/data/formulas";
@@ -18,6 +19,14 @@ const MarkingTutorial = dynamic(
   () =>
     import("@/features/drafts/components/marking-tutorial").then(
       (m) => m.MarkingTutorial,
+    ),
+  { loading: () => <Skeleton className="h-[28rem] w-full rounded-3xl" /> },
+);
+
+const ConstructionLesson = dynamic(
+  () =>
+    import("@/features/drafts/components/construction-lesson").then(
+      (m) => m.ConstructionLesson,
     ),
   { loading: () => <Skeleton className="h-[28rem] w-full rounded-3xl" /> },
 );
@@ -43,12 +52,23 @@ const DraftingEngine = dynamic(
 
 export function DraftLearningView() {
   const reduceMotion = useReducedMotion();
-  const hydrate = useDraftLearningStore((s) => s.hydrate);
-  const mode = useDraftLearningStore((s) => s.mode);
-  const setMode = useDraftLearningStore((s) => s.setMode);
-  const completedSteps = useDraftLearningStore((s) => s.completedSteps);
-  const practiceCompletions = useDraftLearningStore((s) => s.practiceCompletions);
-  const practiceBestScore = useDraftLearningStore((s) => s.practiceBestScore);
+  const {
+    hydrate,
+    mode,
+    setMode,
+    completedSteps,
+    practiceCompletions,
+    practiceBestScore,
+  } = useDraftLearningStore(
+    useShallow((s) => ({
+      hydrate: s.hydrate,
+      mode: s.mode,
+      setMode: s.setMode,
+      completedSteps: s.completedSteps,
+      practiceCompletions: s.practiceCompletions,
+      practiceBestScore: s.practiceBestScore,
+    })),
+  );
 
   useEffect(() => {
     void hydrate();
@@ -58,7 +78,7 @@ export function DraftLearningView() {
   const lessonTotal = CONSTRUCTION_STEPS.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       <JourneyGuideBanner feature="drafts" />
       <PageHeader
         eyebrow="Pattern craft"
@@ -113,11 +133,12 @@ export function DraftLearningView() {
       <div
         role="tablist"
         aria-label="Draft modes"
-        className="grid grid-cols-3 gap-1.5 rounded-2xl bg-muted/70 p-1.5 ring-1 ring-border/50"
+        className="grid grid-cols-2 gap-1.5 rounded-2xl bg-muted/70 p-1.5 ring-1 ring-border/50 sm:grid-cols-4"
       >
         {(
           [
             { id: "lesson" as const, label: "Marking", icon: Compass },
+            { id: "modules" as const, label: "Modules", icon: ListOrdered },
             { id: "practice" as const, label: "Practice", icon: PencilRuler },
             { id: "engine" as const, label: "Engine", icon: Cpu },
           ] as const
@@ -161,6 +182,7 @@ export function DraftLearningView() {
 
       <FeatureErrorBoundary title="Draft mode failed to load">
         {mode === "lesson" ? <MarkingTutorial /> : null}
+        {mode === "modules" ? <ConstructionLesson /> : null}
         {mode === "practice" ? <PracticeMode /> : null}
         {mode === "engine" ? <DraftingEngine /> : null}
       </FeatureErrorBoundary>

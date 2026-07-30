@@ -17,7 +17,7 @@ export function FloatingActionButton() {
     <AnimatePresence>
       {isVisible ? (
         <motion.div
-          className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-40 sm:right-[max(1rem,calc(50%-14rem))]"
+          className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-4 z-50 sm:right-[max(1rem,calc(50%-14rem))]"
           initial={reduceMotion ? false : { opacity: 0, scale: 0.85, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={reduceMotion ? undefined : { opacity: 0, scale: 0.85, y: 12 }}
@@ -29,8 +29,9 @@ export function FloatingActionButton() {
             aria-label={ariaLabel || label}
             className={cn(
               "pointer-events-auto inline-flex items-center gap-2 rounded-full px-5 py-3.5",
-              "bg-primary text-primary-foreground shadow-[0_14px_36px_-10px_color-mix(in_oklch,var(--champagne)_50%,transparent)]",
-              "ring-1 ring-champagne/35 transition hover:brightness-110 active:scale-[0.97]",
+              "bg-primary/80 text-primary-foreground shadow-[0_14px_36px_-10px_color-mix(in_oklch,var(--champagne)_50%,transparent)]",
+              "backdrop-blur-xl backdrop-saturate-150 ring-1 ring-champagne/35",
+              "transition hover:brightness-110 active:scale-[0.97]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             )}
           >

@@ -113,7 +113,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
       "Read while the client breathes normally.",
     ],
     proTips: [
-      "A bust minus upper-bust difference above 7.5 cm (3\") usually calls for a full-bust adjustment.",
+      "A bust minus upper-bust difference above {{cm:7.5}} (about {{in:3}}) usually calls for a full-bust adjustment.",
       "Ask the client to lift arms slightly to seat the tape, then lower arms before reading.",
     ],
     commonMistakes: [
@@ -166,7 +166,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
     group: "Core girths",
     kind: "girth",
     definition:
-      "The circumference around the fullest part of the hips and seat, typically 18–23 cm below the waist.",
+      "The circumference around the fullest part of the hips and seat, typically {{rangeCm:18-23}} below the waist.",
     purpose:
       "Defines the lower width of blouses, kurtis, dresses, and all bottom-wear.",
     whyItMatters:
@@ -210,7 +210,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
     ],
     proTips: [
       "Mark both endpoints with tailor's chalk before measuring.",
-      "Measure both shoulders — many people are asymmetric by up to 1 cm.",
+      "Measure both shoulders — many people are asymmetric by up to {{cm:1}}.",
     ],
     commonMistakes: [
       "Starting from the middle of the neck instead of its base.",
@@ -241,7 +241,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
       "Keep the tape lightly touching the body, not bridging.",
     ],
     proTips: [
-      "Compare with the back shoulder width — front is normally 1–2 cm narrower on balanced posture.",
+      "Compare with the back shoulder width — front is normally {{rangeCm:1-2}} narrower on balanced posture.",
     ],
     commonMistakes: [
       "Measuring too low, across the bust instead of the upper chest.",
@@ -357,7 +357,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
       "The distance from the shoulder bone point down the outside of the arm to the desired sleeve end.",
     purpose: "Sets where the sleeve hem falls on the arm.",
     whyItMatters:
-      "Sleeve length is instantly visible. Even 1 cm past or short of the intended point reads as a fitting error.",
+      "Sleeve length is instantly visible. Even {{cm:1}} past or short of the intended point reads as a fitting error.",
     howToMeasure: [
       "Start the tape at the shoulder bone point.",
       "Run it down the outside of a slightly bent arm.",
@@ -568,7 +568,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
     group: "Shoulders & back",
     kind: "length",
     definition:
-      "The width across the front chest between the two front armhole creases, about 7–8 cm below the neck base.",
+      "The width across the front chest between the two front armhole creases, about {{rangeCm:7-8}} below the neck base.",
     purpose: "Sets the front armhole position so it clears the chest.",
     whyItMatters:
       "This is the reading that stops armholes cutting into the front of the body when the arms move.",
@@ -582,7 +582,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
       "Pressing the tape into the arm creases.",
     ],
     tools: ["Flexible measuring tape"],
-    checkpoints: ["Level roughly 7–8 cm below neck base", "Endpoints at the arm creases, not beyond"],
+    checkpoints: ["Level roughly {{rangeCm:7-8}} below neck base", "Endpoints at the arm creases, not beyond"],
     typicalRangeCm: [28, 37],
     illustration: { kind: "hline", y: 72, x1: 66, x2: 134 },
   },
@@ -592,7 +592,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
     group: "Shoulders & back",
     kind: "length",
     definition:
-      "The width across the back between the two back armhole creases, about 10 cm below the neck bone.",
+      "The width across the back between the two back armhole creases, about {{cm:10}} below the neck bone.",
     purpose: "Sets the back armhole position and back panel width.",
     whyItMatters:
       "Reaching forward is powered by the back. Cross back plus ease decides whether the garment allows a full hug or restricts it.",
@@ -608,7 +608,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
       "Including part of the arm in the reading.",
     ],
     tools: ["Flexible measuring tape"],
-    checkpoints: ["About 10 cm below the neck bone", "Arms relaxed for the base reading"],
+    checkpoints: ["About {{cm:10}} below the neck bone", "Arms relaxed for the base reading"],
     typicalRangeCm: [30, 40],
     illustration: { kind: "hline", y: 76, x1: 62, x2: 138 },
   },
@@ -694,13 +694,13 @@ export const MEASUREMENTS: MeasurementGuide[] = [
     group: "Blouse drafting",
     kind: "point",
     definition:
-      "The point where a dart ends — always short of the apex, typically 2.5–4 cm away from it.",
+      "The point where a dart ends — always short of the apex, typically {{rangeCm:2.5-4}} away from it.",
     purpose: "Ends bust shaping smoothly so fabric domes gently over the apex.",
     whyItMatters:
       "A dart stitched all the way to the apex creates a hard cone. Stopping at the correct dart point is what makes shaping invisible.",
     howToMeasure: [
       "Locate the apex first.",
-      "Mark the dart point 2.5–4 cm back from the apex along the dart's direction.",
+      "Mark the dart point {{rangeCm:2.5-4}} back from the apex along the dart's direction.",
       "Softer, fuller busts need the larger offset.",
     ],
     proTips: [
@@ -712,7 +712,7 @@ export const MEASUREMENTS: MeasurementGuide[] = [
       "Using the same offset for every figure.",
     ],
     tools: ["Tailor's chalk", "Ruler", "Tailor's ham (for pressing)"],
-    checkpoints: ["Offset chosen for the figure (2.5–4 cm)", "Dart point marked before stitching"],
+    checkpoints: ["Offset chosen for the figure ({{rangeCm:2.5-4}})", "Dart point marked before stitching"],
     illustration: { kind: "dot", x: 104, y: 102 },
   },
 ];

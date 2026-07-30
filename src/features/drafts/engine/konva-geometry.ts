@@ -1,4 +1,6 @@
 import type { EngineCalculations } from "@/features/drafts/engine/calculations";
+import type { UnitSystem } from "@/stores/unit-store";
+import { formatFromCm } from "@/utils/units";
 
 export type Point = { x: number; y: number };
 
@@ -55,6 +57,7 @@ function px(cm: number): number {
 
 export function buildEngineBoardGeometry(
   calc: EngineCalculations,
+  unit: UnitSystem = "cm",
 ): EngineBoardGeometry {
   const d = calc.draft;
   const origin: Point = { x: 48, y: 40 };
@@ -113,42 +116,42 @@ export function buildEngineBoardGeometry(
     { id: "cf", text: "CF", at: { x: centerTop.x + 6, y: centerTop.y + 14 } },
     {
       id: "bust",
-      text: `Bust ${(d.bustQuarter).toFixed(1)}`,
+      text: `Bust ${formatFromCm(d.bustQuarter, unit)}`,
       at: { x: bustEnd.x + 6, y: bustEnd.y - 6 },
     },
     {
       id: "waist",
-      text: `Waist ${d.waistQuarter.toFixed(1)}`,
+      text: `Waist ${formatFromCm(d.waistQuarter, unit)}`,
       at: { x: waistEnd.x + 6, y: waistEnd.y - 6 },
     },
     {
       id: "hip",
-      text: `Hip ${d.hipQuarter.toFixed(1)}`,
+      text: `Hip ${formatFromCm(d.hipQuarter, unit)}`,
       at: { x: hipEnd.x + 6, y: hipEnd.y - 6 },
     },
     {
       id: "neck",
-      text: `Neck ${d.neckWidth.toFixed(1)}`,
+      text: `Neck ${formatFromCm(d.neckWidth, unit)}`,
       at: { x: neckMid.x + 4, y: neckMid.y + 12 },
     },
     {
       id: "armhole",
-      text: `AH ${d.armholeDepth.toFixed(1)}`,
+      text: `AH ${formatFromCm(d.armholeDepth, unit)}`,
       at: { x: armPitch.x - 36, y: armPitch.y },
     },
     {
       id: "dart",
-      text: `Dart ${d.dartIntake.toFixed(1)}`,
+      text: `Dart ${formatFromCm(d.dartIntake, unit)}`,
       at: { x: dartTip.x + 8, y: dartTip.y + 14 },
     },
     {
       id: "sleeve",
-      text: `Sleeve ${d.sleeveLength.toFixed(1)}`,
+      text: `Sleeve ${formatFromCm(d.sleeveLength, unit)}`,
       at: { x: sleeveEnd.x + 4, y: sleeveEnd.y },
     },
     {
       id: "sa",
-      text: `SA ${d.seamAllowance}`,
+      text: `SA ${formatFromCm(d.seamAllowance, unit)}`,
       at: { x: origin.x + 8, y: centerBottom.y + 18 },
     },
   ];

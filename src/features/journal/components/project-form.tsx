@@ -70,7 +70,7 @@ export function ProjectForm({ title, onCancel }: ProjectFormProps) {
         </Button>
       </header>
 
-      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4 pb-10">
         <label className="block space-y-1.5">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Project name
@@ -275,7 +275,7 @@ export function ProjectForm({ title, onCancel }: ProjectFormProps) {
         ) : null}
       </div>
 
-      <footer className="flex gap-2 border-t border-border/60 px-4 py-3">
+      <footer className="flex gap-2 border-t border-border/60 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <Button
           type="button"
           variant="outline"

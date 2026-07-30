@@ -1,21 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { GraduationCap, ListChecks, Sparkles } from "lucide-react";
-import { MEASUREMENTS } from "@/features/measurements/data/measurements";
-import { LearningCard } from "@/features/measurements/components/learning-card";
+import { MEASUREMENTS, MEASUREMENT_MAP } from "@/features/measurements/data/measurements";
+import { LearningPanel } from "@/features/measurements/components/learning-card";
 import { MeasurementPicker } from "@/features/measurements/components/measurement-picker";
 import { MeasurementMasterclassTour } from "@/features/measurements/components/measurement-masterclass-tour";
 import { FittingRoomControls } from "@/features/measurements/components/fitting-room-controls";
 import { CinematicLoader } from "@/features/measurements/components/cinematic-loader";
-import { UnitToggle } from "@/features/measurements/components/unit-toggle";
 import { PageHeader } from "@/components/shared/page-header";
 import { FeatureErrorBoundary } from "@/components/shared/feature-error-boundary";
 import { JourneyGuideBanner } from "@/features/journey/components/journey-guide-banner";
 import { useMeasurementStore } from "@/stores/measurement-store";
 import { useCurtainTransitionStore } from "@/stores/curtain-transition-store";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { useUnit } from "@/hooks/use-unit";
+import { formatRangeCm, getLabel } from "@/utils/units";
+import { cn } from "@/lib/utils";
 
 const InteractiveMannequin = dynamic(
   () => import("@/features/measurements/components/interactive-mannequin"),
@@ -24,6 +27,10 @@ const InteractiveMannequin = dynamic(
     loading: () => <CinematicLoader />,
   },
 );
+
+/** Explicit stage size — never collapses on mobile or desktop. */
+const MANNEQUIN_STAGE_CLASS =
+  "relative h-[45vh] min-h-[380px] w-full shrink-0 overflow-hidden bg-black";
 
 function StepBadge({ n }: { n: number }) {
   return (
@@ -41,6 +48,13 @@ function StepBadge({ n }: { n: number }) {
  * Orbit / tap interaction only (cinema lives on `/`).
  */
 function DashboardMannequinStage({ dismantling }: { dismantling: boolean }) {
+  const selectedId = useMeasurementStore((s) => s.selectedId);
+  const { unit } = useUnit();
+  const guide = selectedId ? MEASUREMENT_MAP[selectedId] : null;
+  const rangeLabel = guide?.typicalRangeCm
+    ? formatRangeCm(guide.typicalRangeCm, unit)
+    : null;
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
@@ -54,7 +68,24 @@ function DashboardMannequinStage({ dismantling }: { dismantling: boolean }) {
       }}
       className="relative overflow-hidden rounded-[1.75rem] border border-champagne/20 bg-gradient-to-b from-card via-navy/40 to-card shadow-[0_22px_60px_-28px_rgba(0,0,0,0.65)]"
     >
-      <div className="relative h-[50vh] min-h-[280px] w-full shrink-0 overflow-hidden bg-black">
+      {guide ? (
+        <div className="pointer-events-none absolute left-3 right-3 top-3 z-20 flex justify-center">
+          <p className="rounded-full border border-champagne/25 bg-black/55 px-3 py-1.5 text-center text-[11px] font-semibold tracking-wide text-white backdrop-blur-md">
+            {guide.label}
+            {rangeLabel ? (
+              <span className="ml-2 font-medium text-champagne">
+                {rangeLabel}
+              </span>
+            ) : (
+              <span className="ml-2 font-medium text-white/70">
+                ({getLabel(unit)})
+              </span>
+            )}
+          </p>
+        </div>
+      ) : null}
+
+      <div className={MANNEQUIN_STAGE_CLASS}>
         <MeasurementMasterclassTour />
         <FeatureErrorBoundary
           title="3D mannequin failed"
@@ -74,8 +105,9 @@ function DashboardMannequinStage({ dismantling }: { dismantling: boolean }) {
 }
 
 /**
- * Measurements working dashboard — fills the viewport without a tall scroll void.
- * Canvas ~50vh; learning panels occupy the remaining flow. No h-[240vh] runway.
+ * Measurements masterclass dashboard.
+ * Split: InteractiveMannequin (top / left) + LearningPanel (bottom / right) —
+ * both panes keep explicit min-heights so the academy never collapses.
  */
 export function MeasurementsView() {
   const hydrate = useMeasurementStore((s) => s.hydrate);
@@ -83,6 +115,8 @@ export function MeasurementsView() {
   const selectedId = useMeasurementStore((s) => s.selectedId);
   const dismantleScene = useCurtainTransitionStore((s) => s.dismantleScene);
   const [stageMounted, setStageMounted] = useState(true);
+  const learningPanelRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     void hydrate();
@@ -94,14 +128,22 @@ export function MeasurementsView() {
     return () => window.clearTimeout(id);
   }, [dismantleScene]);
 
+  // When a body part is tapped on the 3D form, bring the lesson into view.
+  useEffect(() => {
+    if (!selectedId || !learningPanelRef.current) return;
+    learningPanelRef.current.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "nearest",
+    });
+  }, [selectedId, reduceMotion]);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-6">
+    <div className="flex w-full flex-col gap-6 pb-8">
       <JourneyGuideBanner feature="measurements" />
       <PageHeader
-        eyebrow="Atelier masterclass"
+        eyebrow="Module-wise academy"
         title="Measurements"
-        description="Tap the dress form to open each measurement lesson — practice, mark learned, and move on."
-        actions={<UnitToggle />}
+        description="Explore the dress form, then study each module — foundation first, then every body measurement lesson."
       />
 
       <ol
@@ -116,8 +158,8 @@ export function MeasurementsView() {
           },
           {
             n: 2,
-            title: "Open the lesson",
-            body: "Read the editorial masterclass for that measurement.",
+            title: "Study the module",
+            body: "Read overview, why it matters, steps, tips, tools & checkpoints.",
           },
           {
             n: 3,
@@ -172,47 +214,65 @@ export function MeasurementsView() {
         </div>
       </motion.div>
 
-      <section className="space-y-3" aria-labelledby="step-1-mannequin">
-        <div className="flex items-center gap-2.5 px-0.5">
-          <StepBadge n={1} />
-          <h2
-            id="step-1-mannequin"
-            className="font-cinema text-base tracking-[0.18em]"
-          >
-            Explore the dress form
-          </h2>
-          <Sparkles className="size-3.5 text-primary" aria-hidden />
-        </div>
-
-        {stageMounted ? (
-          <DashboardMannequinStage dismantling={dismantleScene} />
-        ) : (
-          <div
-            className="relative h-[50vh] min-h-[280px] overflow-hidden rounded-[1.75rem] bg-black"
-            aria-hidden
-          />
+      {/*
+        Academy workspace — never collapses:
+        Mobile: mannequin (top) → LearningPanel (bottom)
+        Desktop: mannequin (left) → LearningPanel (right)
+      */}
+      <div
+        className={cn(
+          "grid shrink-0 gap-4",
+          "lg:grid-cols-2 lg:items-stretch lg:gap-5",
         )}
-
-        <FittingRoomControls />
-      </section>
-
-      <section
-        className="flex min-h-0 flex-1 flex-col space-y-3"
-        aria-labelledby="step-2-lesson"
       >
-        <div className="flex items-center gap-2.5 px-0.5">
-          <StepBadge n={2} />
-          <h2
-            id="step-2-lesson"
-            className="font-cinema text-base tracking-[0.18em]"
-          >
-            {selectedId
-              ? "Your measurement masterclass"
-              : "Lesson opens when you tap"}
-          </h2>
-        </div>
-        <LearningCard />
-      </section>
+        <section className="flex min-h-0 flex-col space-y-3" aria-labelledby="step-1-mannequin">
+          <div className="flex items-center gap-2.5 px-0.5">
+            <StepBadge n={1} />
+            <h2
+              id="step-1-mannequin"
+              className="font-cinema text-base tracking-[0.18em]"
+            >
+              Explore the dress form
+            </h2>
+            <Sparkles className="size-3.5 text-primary" aria-hidden />
+          </div>
+
+          {stageMounted ? (
+            <DashboardMannequinStage dismantling={dismantleScene} />
+          ) : (
+            <div
+              className={cn(
+                MANNEQUIN_STAGE_CLASS,
+                "overflow-hidden rounded-[1.75rem]",
+              )}
+              aria-hidden
+            />
+          )}
+
+          <FittingRoomControls />
+        </section>
+
+        <section
+          ref={learningPanelRef}
+          className="flex min-h-[380px] flex-col space-y-3"
+          aria-labelledby="step-2-lesson"
+        >
+          <div className="flex items-center gap-2.5 px-0.5">
+            <StepBadge n={2} />
+            <h2
+              id="step-2-lesson"
+              className="font-cinema text-base tracking-[0.18em]"
+            >
+              {selectedId
+                ? "Your measurement module"
+                : "Module 1 · Foundation"}
+            </h2>
+          </div>
+          <div className="min-h-[380px] flex-1">
+            <LearningPanel />
+          </div>
+        </section>
+      </div>
 
       <section className="space-y-3" aria-labelledby="step-3-picker">
         <div className="flex items-center gap-2.5 px-0.5">

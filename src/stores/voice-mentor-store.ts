@@ -35,6 +35,8 @@ type VoiceMentorState = {
 
 let recognition: SpeechRecognitionLike | null = null;
 let finalBuffer = "";
+/** Guards against double-handling when stop() triggers onend after onresult. */
+let commandHandled = false;
 
 function ensureRecognition(): SpeechRecognitionLike | null {
   if (recognition) return recognition;
@@ -42,10 +44,24 @@ function ensureRecognition(): SpeechRecognitionLike | null {
   return recognition;
 }
 
+function haltRecognition() {
+  try {
+    recognition?.stop();
+  } catch {
+    // already stopped
+  }
+}
+
 function respondToTranscript(
   transcript: string,
   set: (partial: Partial<VoiceMentorState>) => void,
 ) {
+  if (commandHandled) return;
+  commandHandled = true;
+
+  // Stop the mic immediately — saves battery and avoids trailing noise.
+  haltRecognition();
+
   const answer = toMentorAnswer(parseTailoringQuery(transcript));
   set({
     processing: false,
@@ -55,6 +71,7 @@ function respondToTranscript(
     panelOpen: true,
     error: null,
   });
+  // Speak at default utterance volume (1) so device system volume is respected.
   speakText(answer.spoken);
 }
 
@@ -89,6 +106,7 @@ export const useVoiceMentorStore = create<VoiceMentorState>((set, get) => ({
 
     stopNarration();
     finalBuffer = "";
+    commandHandled = false;
 
     const rec = ensureRecognition();
     if (!rec) {
@@ -120,13 +138,23 @@ export const useVoiceMentorStore = create<VoiceMentorState>((set, get) => ({
           interim = `${interim} ${text}`.trim();
         }
       }
-      set({
-        transcript: finalBuffer || interim,
-      });
+      const live = finalBuffer || interim;
+      set({ transcript: live });
+
+      // Final phrase received → stop listening immediately and answer.
+      if (finalBuffer.trim() && !commandHandled) {
+        set({ processing: true, listening: false });
+        respondToTranscript(finalBuffer.trim(), set);
+      }
     };
 
     rec.onerror = (event) => {
       const message = speechRecognitionErrorMessage(event.error);
+      // Aborted/stop after a successful command is expected — stay silent.
+      if (commandHandled || event.error === "aborted") {
+        set({ listening: false, processing: false });
+        return;
+      }
       set({
         listening: false,
         processing: false,
@@ -136,6 +164,10 @@ export const useVoiceMentorStore = create<VoiceMentorState>((set, get) => ({
     };
 
     rec.onend = () => {
+      if (commandHandled) {
+        set({ listening: false, processing: false });
+        return;
+      }
       const text = finalBuffer.trim() || get().transcript.trim();
       if (text) {
         set({ processing: true, listening: false });
@@ -157,7 +189,7 @@ export const useVoiceMentorStore = create<VoiceMentorState>((set, get) => ({
   },
 
   stopListening: () => {
-    recognition?.stop();
+    haltRecognition();
     set({ listening: false });
   },
 
@@ -171,9 +203,14 @@ export const useVoiceMentorStore = create<VoiceMentorState>((set, get) => ({
 
   dismissPanel: () => {
     if (get().listening) {
-      recognition?.abort();
+      try {
+        recognition?.abort();
+      } catch {
+        // already stopped
+      }
     }
     stopNarration();
+    commandHandled = true;
     set({
       panelOpen: false,
       listening: false,
@@ -200,6 +237,7 @@ export function disposeVoiceMentorRuntime() {
   }
   recognition = null;
   finalBuffer = "";
+  commandHandled = true;
   stopNarration();
   useVoiceMentorStore.setState({
     listening: false,

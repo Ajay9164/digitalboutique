@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useMounted } from "@/hooks/use-mounted";
+import { useIsMounted } from "@/hooks/use-mounted";
 import { useUiStore } from "@/stores/ui-store";
 import { MasteryProgressRing } from "@/components/learning/mastery-progress-ring";
+import { UnitToggle } from "@/components/shared/unit-toggle";
 import { useMasteryStore } from "@/stores/mastery-store";
 import { useUserStore } from "@/stores/user-store";
 import { resolveMastery } from "@/features/learning/lib/mastery";
@@ -16,6 +17,7 @@ import {
 } from "@/features/onboarding/lib/personalization";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useShallow } from "zustand/react/shallow";
 
 const titles: Record<string, string> = {
   "/": "Home",
@@ -30,11 +32,20 @@ const titles: Record<string, string> = {
 export function TopHeader() {
   const pathname = usePathname();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const mounted = useMounted();
-  const userHydrated = useUserStore((s) => s.hydrated);
-  const userName = useUserStore((s) => s.userName);
-  const totalXp = useMasteryStore((s) => s.totalXp);
-  const modulesCompleted = useMasteryStore((s) => s.modulesCompleted);
+  const mounted = useIsMounted();
+  const { userHydrated, userName } = useUserStore(
+    useShallow((s) => ({
+      userHydrated: s.hydrated,
+      userName: s.userName,
+    })),
+  );
+  const { masteryHydrated, totalXp, modulesCompleted } = useMasteryStore(
+    useShallow((s) => ({
+      masteryHydrated: s.hydrated,
+      totalXp: s.totalXp,
+      modulesCompleted: s.modulesCompleted,
+    })),
+  );
   const mastery = resolveMastery(totalXp, modulesCompleted);
   const pageTitle = useUiStore((state) => state.pageTitle);
   const sectionTitle =
@@ -90,20 +101,35 @@ export function TopHeader() {
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2.5">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
+          <UnitToggle compact />
+
           <Link
             href="/progress"
             className="interactive-lift group flex items-center gap-2 rounded-full border border-champagne/20 bg-card/70 py-1 pl-1 pr-2.5 backdrop-blur-md"
-            aria-label={`Mastery Level ${mastery.level}: ${mastery.title}`}
+            aria-label={
+              mounted && masteryHydrated
+                ? `Mastery Level ${mastery.level}: ${mastery.title}`
+                : "Mastery progress"
+            }
           >
             <MasteryProgressRing size={34} />
             <span className="hidden min-w-0 flex-col leading-tight sm:flex">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Level {mastery.level}
-              </span>
-              <span className="max-w-[7.5rem] truncate text-[11px] font-semibold text-foreground">
-                {mastery.title}
-              </span>
+              {!mounted || !masteryHydrated ? (
+                <>
+                  <span className="h-2.5 w-12 animate-pulse rounded bg-muted/60" aria-hidden />
+                  <span className="mt-1 h-2.5 w-16 animate-pulse rounded bg-muted/50" aria-hidden />
+                </>
+              ) : (
+                <>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Level {mastery.level}
+                  </span>
+                  <span className="max-w-[7.5rem] truncate text-[11px] font-semibold text-foreground">
+                    {mastery.title}
+                  </span>
+                </>
+              )}
             </span>
           </Link>
 

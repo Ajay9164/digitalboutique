@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { DeveloperFooter } from "@/components/layout/developer-footer";
 import { FloatingActionButton } from "@/components/layout/floating-action-button";
 import { VoiceMentorFab } from "@/components/layout/voice-mentor-fab";
 import { TopHeader } from "@/components/layout/top-header";
@@ -21,6 +20,7 @@ type AppShellProps = {
 /**
  * Dashboard chrome for the `(app)` route group only —
  * TopHeader, BottomNav, voice mentor, PWA banner, mastery toast.
+ * Developer signature lives in RootOverlays (global).
  * Cinematic landing (`/`) does not use this shell.
  */
 export function AppShell({ children }: AppShellProps) {
@@ -40,7 +40,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <main
         id="main-content"
-        className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 pb-[calc(7.75rem+env(safe-area-inset-bottom))] pt-7 sm:px-7 md:max-w-xl lg:max-w-2xl"
+        className="mx-auto flex min-h-0 w-full max-w-lg flex-1 flex-col overflow-y-auto overscroll-y-contain px-5 pb-[calc(var(--atelier-chrome-bottom)+env(safe-area-inset-bottom))] pt-7 scroll-pb-[calc(var(--atelier-chrome-bottom)+env(safe-area-inset-bottom))] sm:px-7 md:max-w-xl lg:max-w-2xl"
       >
         {children}
       </main>
@@ -49,7 +49,6 @@ export function AppShell({ children }: AppShellProps) {
       <MasteryCelebration />
       <FloatingActionButton />
       <VoiceMentorFab />
-      <DeveloperFooter />
       <BottomNav />
     </div>
   );

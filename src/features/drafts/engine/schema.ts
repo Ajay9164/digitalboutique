@@ -1,29 +1,29 @@
 import { z } from "zod";
 
-const cm = (min: number, max: number, label: string) =>
+const length = (min: number, max: number, label: string) =>
   z
     .number({ error: `${label} must be a number` })
-    .min(min, `${label} must be at least ${min} cm`)
-    .max(max, `${label} must be at most ${max} cm`);
+    .min(min, `${label} is too small`)
+    .max(max, `${label} is too large`);
 
 /**
  * Body + drafting inputs for the intelligent drafting engine.
- * All values in centimetres.
+ * All values stored in centimetres (converted from display unit at the form edge).
  */
 export const engineFormSchema = z.object({
-  bust: cm(70, 140, "Bust"),
-  waist: cm(50, 130, "Waist"),
-  hip: cm(70, 150, "Hip"),
-  neck: cm(28, 50, "Neck"),
-  shoulder: cm(9, 20, "Shoulder"),
-  sleeveLength: cm(10, 70, "Sleeve length"),
-  blouseLength: cm(28, 55, "Blouse length"),
-  apexDistance: cm(12, 30, "Apex distance"),
-  apexDepth: cm(16, 35, "Apex depth"),
-  bustEase: cm(0, 12, "Bust ease"),
-  waistEase: cm(0, 10, "Waist ease"),
-  hipEase: cm(0, 12, "Hip ease"),
-  seamAllowance: cm(0.5, 3, "Seam allowance"),
+  bust: length(70, 140, "Bust"),
+  waist: length(50, 130, "Waist"),
+  hip: length(70, 150, "Hip"),
+  neck: length(28, 50, "Neck"),
+  shoulder: length(9, 20, "Shoulder"),
+  sleeveLength: length(10, 70, "Sleeve length"),
+  blouseLength: length(28, 55, "Blouse length"),
+  apexDistance: length(12, 30, "Apex distance"),
+  apexDepth: length(16, 35, "Apex depth"),
+  bustEase: length(0, 12, "Bust ease"),
+  waistEase: length(0, 10, "Waist ease"),
+  hipEase: length(0, 12, "Hip ease"),
+  seamAllowance: length(0.5, 3, "Seam allowance"),
 });
 
 export type EngineFormValues = z.infer<typeof engineFormSchema>;

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { DeveloperFooter } from "@/components/layout/developer-footer";
 
 const CurtainDropOverlay = dynamic(
   () =>
@@ -27,6 +28,7 @@ export function RootOverlays() {
     <>
       <CurtainDropOverlay />
       <OnboardingOverlay />
+      <DeveloperFooter />
     </>
   );
 }

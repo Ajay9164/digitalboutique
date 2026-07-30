@@ -4,22 +4,31 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { useMasteryStore } from "@/stores/mastery-store";
 import { useUserStore } from "@/stores/user-store";
-import { useMounted } from "@/hooks/use-mounted";
+import { useIsMounted } from "@/hooks/use-mounted";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { masteryCongratsLabel } from "@/features/onboarding/lib/personalization";
 import { Button } from "@/components/ui/button";
+import { useShallow } from "zustand/react/shallow";
 
 /**
  * Lightweight mastery unlock toast — confetti + glowing badge for +50 XP awards.
  * Congratulates by persisted name once the client has mounted (hydration-safe).
  */
 export function MasteryCelebration() {
-  const celebration = useMasteryStore((s) => s.celebration);
-  const clearCelebration = useMasteryStore((s) => s.clearCelebration);
+  const { celebration, clearCelebration } = useMasteryStore(
+    useShallow((s) => ({
+      celebration: s.celebration,
+      clearCelebration: s.clearCelebration,
+    })),
+  );
   const reduceMotion = useReducedMotion();
-  const mounted = useMounted();
-  const userHydrated = useUserStore((s) => s.hydrated);
-  const userName = useUserStore((s) => s.userName);
+  const mounted = useIsMounted();
+  const { userHydrated, userName } = useUserStore(
+    useShallow((s) => ({
+      userHydrated: s.hydrated,
+      userName: s.userName,
+    })),
+  );
 
   const congrats = masteryCongratsLabel(
     mounted && userHydrated ? userName : null,

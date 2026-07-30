@@ -13,6 +13,7 @@ import {
 import { useStudioStore } from "@/stores/studio-store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useShallow } from "zustand/react/shallow";
 
 const MORPH_SLIDERS: Array<{
   key: keyof BodyMorph;
@@ -34,17 +35,33 @@ function morphPercent(value: number): string {
  * Parametric fitting-room controls — body morph sliders + Studio fabric drape.
  */
 export function FittingRoomControls({ className }: { className?: string }) {
-  const bodyMorph = useMeasurementStore((s) => s.bodyMorph);
-  const setBodyMorph = useMeasurementStore((s) => s.setBodyMorph);
-  const resetBodyMorph = useMeasurementStore((s) => s.resetBodyMorph);
-  const fabricDrapeEnabled = useMeasurementStore((s) => s.fabricDrapeEnabled);
-  const setFabricDrapeEnabled = useMeasurementStore((s) => s.setFabricDrapeEnabled);
-  const fabricPhotoId = useMeasurementStore((s) => s.fabricPhotoId);
-  const setFabricPhotoId = useMeasurementStore((s) => s.setFabricPhotoId);
+  const {
+    bodyMorph,
+    setBodyMorph,
+    resetBodyMorph,
+    fabricDrapeEnabled,
+    setFabricDrapeEnabled,
+    fabricPhotoId,
+    setFabricPhotoId,
+  } = useMeasurementStore(
+    useShallow((s) => ({
+      bodyMorph: s.bodyMorph,
+      setBodyMorph: s.setBodyMorph,
+      resetBodyMorph: s.resetBodyMorph,
+      fabricDrapeEnabled: s.fabricDrapeEnabled,
+      setFabricDrapeEnabled: s.setFabricDrapeEnabled,
+      fabricPhotoId: s.fabricPhotoId,
+      setFabricPhotoId: s.setFabricPhotoId,
+    })),
+  );
 
-  const hydrateStudio = useStudioStore((s) => s.hydrate);
-  const photos = useStudioStore((s) => s.photos);
-  const activePhotoId = useStudioStore((s) => s.activePhotoId);
+  const { hydrateStudio, photos, activePhotoId } = useStudioStore(
+    useShallow((s) => ({
+      hydrateStudio: s.hydrate,
+      photos: s.photos,
+      activePhotoId: s.activePhotoId,
+    })),
+  );
 
   useEffect(() => {
     void hydrateStudio();

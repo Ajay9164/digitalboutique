@@ -80,7 +80,7 @@ export const CONSTRUCTION_STEPS: ConstructionStep[] = [
       "Drop Neck Depth Front along the center line.",
       "Connect with a smooth curve from shoulder-neck to center-front depth.",
     ],
-    formulaHint: "Width = Neck ÷ 6 + 0.5",
+    formulaHint: "Width = Neck ÷ 6 + {{in:0.5}}",
     relatedFormulas: ["neck-width"],
   },
   {
@@ -95,7 +95,7 @@ export const CONSTRUCTION_STEPS: ConstructionStep[] = [
       "Connect the neck point to the outer shoulder point with a straight line.",
       "This outer point becomes the top of the armhole.",
     ],
-    formulaHint: "Drop = 2.5 cm · Length = Shoulder",
+    formulaHint: "Drop = {{cm:2.5}} · Length = Shoulder",
     relatedFormulas: ["shoulder-drop"],
   },
   {
@@ -110,7 +110,7 @@ export const CONSTRUCTION_STEPS: ConstructionStep[] = [
       "Shape a curve from the outer shoulder, through the front pitch, into the underarm.",
       "Keep the curve deeper toward the underarm than at the shoulder.",
     ],
-    formulaHint: "Depth = Bust ÷ 4 − 1.5",
+    formulaHint: "Depth = Bust ÷ 4 − {{in:1.5}}",
     relatedFormulas: ["armhole"],
   },
   {
@@ -137,7 +137,7 @@ export const CONSTRUCTION_STEPS: ConstructionStep[] = [
       "Darts remove the surplus between bust and waist so a flat paper block becomes a 3D shape over the apex.",
     howItIsDrawn: [
       "Compute dart intake = Bust¼ − Waist¼.",
-      "Place the dart tip short of the apex (about 2.5–3 cm).",
+      "Place the dart tip short of the apex (about {{rangeCm:2.5-3}}).",
       "Open the intake on the waist or side and draw both dart legs to the tip.",
     ],
     formulaHint: "Intake = Bust¼ − Waist¼",

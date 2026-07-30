@@ -10,6 +10,11 @@ type UserState = {
   resetOnboarding: () => void;
 };
 
+/**
+ * Personalized atelier profile — name + onboarding flag persist to localStorage
+ * so first-time visitors on a new device see the gateway, then return greeted.
+ * Fully offline: no network dependency.
+ */
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
@@ -38,8 +43,18 @@ export const useUserStore = create<UserState>()(
         hasCompletedOnboarding: state.hasCompletedOnboarding,
       }),
       onRehydrateStorage: () => () => {
+        // Always mark hydrated — even if storage is blocked (private mode).
         useUserStore.setState({ hydrated: true });
       },
     },
   ),
 );
+
+/** Safety net if persist rehydrate never fires (rare storage edge cases). */
+if (typeof window !== "undefined") {
+  window.setTimeout(() => {
+    if (!useUserStore.getState().hydrated) {
+      useUserStore.setState({ hydrated: true });
+    }
+  }, 250);
+}

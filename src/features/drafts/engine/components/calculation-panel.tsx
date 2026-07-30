@@ -3,8 +3,21 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Calculator, ChevronDown } from "lucide-react";
-import type { CalculationResult } from "@/features/drafts/engine/calculations";
+import type {
+  CalculationBreakdownRow,
+  CalculationResult,
+} from "@/features/drafts/engine/calculations";
+import { useUnit } from "@/hooks/use-unit";
+import { formatFromCm, resolveMeasureTemplate } from "@/utils/units";
 import { cn } from "@/lib/utils";
+
+function formatBreakdownRow(
+  row: CalculationBreakdownRow,
+  unit: "in" | "cm",
+): string {
+  if (row.cm != null) return formatFromCm(row.cm, unit);
+  return row.text ?? "—";
+}
 
 type CalculationPanelProps = {
   results: CalculationResult[];
@@ -12,6 +25,7 @@ type CalculationPanelProps = {
 };
 
 export function CalculationPanel({ results, className }: CalculationPanelProps) {
+  const { unit } = useUnit();
   const [openId, setOpenId] = useState<string | null>(results[0]?.id ?? null);
 
   return (
@@ -51,14 +65,11 @@ export function CalculationPanel({ results, className }: CalculationPanelProps) 
                     {result.label}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground">
-                    {result.formula}
+                    {resolveMeasureTemplate(result.formula, unit)}
                   </p>
                 </div>
                 <p className="font-display text-lg font-semibold tabular-nums text-primary">
-                  {result.value}
-                  <span className="ml-1 text-xs font-medium text-muted-foreground">
-                    {result.unit}
-                  </span>
+                  {formatFromCm(result.value, unit)}
                 </p>
                 <ChevronDown
                   className={cn(
@@ -80,7 +91,7 @@ export function CalculationPanel({ results, className }: CalculationPanelProps) 
                   >
                     <div className="space-y-2 px-3.5 pb-3 pt-2">
                       <p className="text-sm leading-relaxed text-muted-foreground">
-                        {result.explanation}
+                        {resolveMeasureTemplate(result.explanation, unit)}
                       </p>
                       <dl className="grid grid-cols-2 gap-1.5">
                         {result.breakdown.map((row) => (
@@ -92,7 +103,7 @@ export function CalculationPanel({ results, className }: CalculationPanelProps) 
                               {row.label}
                             </dt>
                             <dd className="text-xs font-semibold tabular-nums">
-                              {row.value}
+                              {formatBreakdownRow(row, unit)}
                             </dd>
                           </div>
                         ))}

@@ -16,6 +16,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
+import { FIRST_LESSON_ID } from "@/features/journey/data/curriculum";
 import { formatEta, lessonHref, stageHref } from "@/features/journey/lib/engine";
 import { useJourneyStore } from "@/stores/journey-store";
 import { useLearningHubStore } from "@/stores/learning-hub-store";
@@ -25,6 +26,7 @@ import { PageSkeleton } from "@/components/shared/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { JourneyMode } from "@/lib/db";
+import { useShallow } from "zustand/react/shallow";
 
 const MODE_OPTIONS: Array<{ id: JourneyMode; label: string }> = [
   { id: "beginner", label: "Beginner" },
@@ -34,15 +36,30 @@ const MODE_OPTIONS: Array<{ id: JourneyMode; label: string }> = [
 
 export function JourneyDashboardView() {
   const reduceMotion = useReducedMotion();
-  const hydrate = useJourneyStore((s) => s.hydrate);
-  const refresh = useJourneyStore((s) => s.refresh);
-  const hydrated = useJourneyStore((s) => s.hydrated);
-  const dashboard = useJourneyStore((s) => s.dashboard);
-  const changeMode = useJourneyStore((s) => s.changeMode);
-  const toggleExplore = useJourneyStore((s) => s.toggleExplore);
+  const {
+    hydrate,
+    refresh,
+    hydrated,
+    dashboard,
+    changeMode,
+    toggleExplore,
+  } = useJourneyStore(
+    useShallow((s) => ({
+      hydrate: s.hydrate,
+      refresh: s.refresh,
+      hydrated: s.hydrated,
+      dashboard: s.dashboard,
+      changeMode: s.changeMode,
+      toggleExplore: s.toggleExplore,
+    })),
+  );
 
-  const hubHydrate = useLearningHubStore((s) => s.hydrate);
-  const hubSnapshot = useLearningHubStore((s) => s.snapshot);
+  const { hubHydrate, hubSnapshot } = useLearningHubStore(
+    useShallow((s) => ({
+      hubHydrate: s.hydrate,
+      hubSnapshot: s.snapshot,
+    })),
+  );
 
   useEffect(() => {
     void hydrate();
@@ -143,7 +160,7 @@ export function JourneyDashboardView() {
               href={
                 continueLesson
                   ? lessonHref(continueLesson.id)
-                  : "/journey/intro/s1-basics"
+                  : lessonHref(FIRST_LESSON_ID)
               }
             >
               <Play aria-hidden />

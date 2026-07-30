@@ -3,6 +3,7 @@
 import { PATTERN_MAP } from "@/features/studio/data/patterns";
 import { useStudioStore } from "@/stores/studio-store";
 import { cn } from "@/lib/utils";
+import { useShallow } from "zustand/react/shallow";
 
 function SliderRow({
   label,
@@ -41,13 +42,18 @@ function SliderRow({
 }
 
 export function OverlayControls({ className }: { className?: string }) {
-  const overlay = useStudioStore((s) => s.overlay);
-  const crop = useStudioStore((s) => s.crop);
-  const zoom = useStudioStore((s) => s.zoom);
-  const patternId = useStudioStore((s) => s.patternId);
-  const setOverlay = useStudioStore((s) => s.setOverlay);
-  const setCrop = useStudioStore((s) => s.setCrop);
-  const setZoom = useStudioStore((s) => s.setZoom);
+  const { overlay, crop, zoom, patternId, setOverlay, setCrop, setZoom } =
+    useStudioStore(
+      useShallow((s) => ({
+        overlay: s.overlay,
+        crop: s.crop,
+        zoom: s.zoom,
+        patternId: s.patternId,
+        setOverlay: s.setOverlay,
+        setCrop: s.setCrop,
+        setZoom: s.setZoom,
+      })),
+    );
   const pattern = PATTERN_MAP[patternId];
 
   return (

@@ -2,8 +2,11 @@
 
 import { useMeasurementStore } from "@/stores/measurement-store";
 import {
+  MEASUREMENT_MAP,
   type MeasurementId,
 } from "@/features/measurements/data/measurements";
+import { useUnit } from "@/hooks/use-unit";
+import { formatRangeCm } from "@/utils/units";
 import { cn } from "@/lib/utils";
 
 type Mannequin2DFallbackProps = {
@@ -14,6 +17,7 @@ type Mannequin2DFallbackProps = {
 /**
  * Premium SVG dress-form used when WebGL context is lost or unavailable.
  * Regions remain clickable so learning continues without 3D.
+ * Badges show typical ranges in the active global unit.
  */
 export function Mannequin2DFallback({
   className,
@@ -21,6 +25,7 @@ export function Mannequin2DFallback({
 }: Mannequin2DFallbackProps) {
   const selectedId = useMeasurementStore((s) => s.selectedId);
   const select = useMeasurementStore((s) => s.select);
+  const { unit } = useUnit();
 
   const hotspots: Array<{
     id: MeasurementId;
@@ -97,6 +102,8 @@ export function Mannequin2DFallback({
 
         {hotspots.map((spot) => {
           const active = selectedId === spot.id;
+          const range = MEASUREMENT_MAP[spot.id]?.typicalRangeCm;
+          const rangeLabel = range ? formatRangeCm(range, unit) : null;
           return (
             <g key={spot.id}>
               <circle
@@ -111,7 +118,11 @@ export function Mannequin2DFallback({
                 className="cursor-pointer"
                 role="button"
                 tabIndex={0}
-                aria-label={`Select ${spot.label}`}
+                aria-label={
+                  rangeLabel
+                    ? `Select ${spot.label}, typical ${rangeLabel}`
+                    : `Select ${spot.label}`
+                }
                 onClick={() => select(active ? null : spot.id)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -122,12 +133,22 @@ export function Mannequin2DFallback({
               />
               <text
                 x={spot.cx}
-                y={spot.cy + 3}
+                y={spot.cy + (rangeLabel ? 0 : 3)}
                 textAnchor="middle"
                 className="pointer-events-none fill-foreground text-[7px] font-semibold"
               >
                 {spot.label}
               </text>
+              {rangeLabel ? (
+                <text
+                  x={spot.cx}
+                  y={spot.cy + 8}
+                  textAnchor="middle"
+                  className="pointer-events-none fill-foreground/75 text-[5px] font-medium"
+                >
+                  {rangeLabel}
+                </text>
+              ) : null}
             </g>
           );
         })}

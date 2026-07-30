@@ -25,6 +25,7 @@ import { DraftBoard } from "@/features/drafts/components/draft-board";
 import { buildDraftGeometry } from "@/features/drafts/lib/draft-geometry";
 import { useDraftLearningStore } from "@/stores/draft-learning-store";
 import { useMasteryStore } from "@/stores/mastery-store";
+import { useUnit } from "@/hooks/use-unit";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +62,7 @@ export function MarkingTutorial({
   embedded = false,
 }: MarkingTutorialProps) {
   const reduceMotion = useReducedMotion();
+  const { unit } = useUnit();
   const markStepComplete = useDraftLearningStore((s) => s.markStepComplete);
   const steps = useMemo(() => resolveMasterclassSteps(focusIds), [focusIds]);
   const [stepIndex, setStepIndex] = useState(0);
@@ -134,6 +136,7 @@ export function MarkingTutorial({
           geometry={geometry}
           visible={visible}
           activeStep={current?.activeLine ?? "center-line"}
+          unit={unit}
           premiumGrid
         />
       </section>
@@ -182,7 +185,7 @@ export function MarkingTutorial({
                         {item.title.replace(/^\d+\.\s*/, "")}
                       </p>
                       <p className="mt-0.5 font-mono text-[11px] font-semibold text-foreground">
-                        {item.formula}
+                        {item.formula(unit)}
                       </p>
                     </div>
                   </div>
@@ -218,10 +221,10 @@ export function MarkingTutorial({
                   The chalk math
                 </h4>
                 <p className="font-mono text-sm font-semibold tracking-tight text-foreground">
-                  {current.formula}
+                  {current.formula(unit)}
                 </p>
                 <p className="text-sm leading-relaxed text-foreground/80">
-                  {current.mathExplainer}
+                  {current.mathExplainer(unit)}
                 </p>
               </section>
 
@@ -241,7 +244,7 @@ export function MarkingTutorial({
                   How to draw it
                 </h4>
                 <ol className="list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-muted-foreground marker:font-semibold marker:text-primary">
-                  {current.howToDraw.map((line) => (
+                  {current.howToDraw(unit).map((line) => (
                     <li key={line}>{line}</li>
                   ))}
                 </ol>

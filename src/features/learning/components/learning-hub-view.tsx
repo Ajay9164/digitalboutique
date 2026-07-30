@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { Flame, Gauge, GraduationCap, Layers3 } from "lucide-react";
+import { Flame, Gauge, GraduationCap, Layers3, Route } from "lucide-react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import Link from "next/link";
 import {
@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLearningHubStore } from "@/stores/learning-hub-store";
 import { formatRelativeLabel } from "@/utils/format";
+import { useShallow } from "zustand/react/shallow";
 
 const ProgressCharts = dynamic(
   () =>
@@ -42,10 +43,14 @@ const ProgressCharts = dynamic(
 
 export function LearningHubView() {
   const reduceMotion = useReducedMotion();
-  const hydrate = useLearningHubStore((s) => s.hydrate);
-  const refresh = useLearningHubStore((s) => s.refresh);
-  const hydrated = useLearningHubStore((s) => s.hydrated);
-  const snapshot = useLearningHubStore((s) => s.snapshot);
+  const { hydrate, refresh, hydrated, snapshot } = useLearningHubStore(
+    useShallow((s) => ({
+      hydrate: s.hydrate,
+      refresh: s.refresh,
+      hydrated: s.hydrated,
+      snapshot: s.snapshot,
+    })),
+  );
 
   useEffect(() => {
     void hydrate();
@@ -180,14 +185,20 @@ export function LearningHubView() {
             </div>
           </DashboardCard>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <Button asChild variant="outline" className="h-auto rounded-2xl py-3">
+              <Link href="/journey">
+                <Route aria-hidden="true" />
+                Learning Journey
+              </Link>
+            </Button>
             <Button asChild variant="outline" className="h-auto rounded-2xl py-3">
               <Link href="/measurements">
                 <GraduationCap aria-hidden="true" />
                 Measurements
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-auto rounded-2xl py-3">
+            <Button asChild variant="outline" className="h-auto rounded-2xl py-3 col-span-2 sm:col-span-1">
               <Link href="/drafts">
                 <Layers3 aria-hidden="true" />
                 Draft Learning

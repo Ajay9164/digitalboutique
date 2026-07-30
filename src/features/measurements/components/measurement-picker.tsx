@@ -8,11 +8,16 @@ import {
 } from "@/features/measurements/data/measurements";
 import { useMeasurementStore } from "@/stores/measurement-store";
 import { cn } from "@/lib/utils";
+import { useShallow } from "zustand/react/shallow";
 
 export function MeasurementPicker() {
-  const selectedId = useMeasurementStore((s) => s.selectedId);
-  const learnedIds = useMeasurementStore((s) => s.learnedIds);
-  const select = useMeasurementStore((s) => s.select);
+  const { selectedId, learnedIds, select } = useMeasurementStore(
+    useShallow((s) => ({
+      selectedId: s.selectedId,
+      learnedIds: s.learnedIds,
+      select: s.select,
+    })),
+  );
 
   return (
     <div className="space-y-4">

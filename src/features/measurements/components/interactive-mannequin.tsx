@@ -189,31 +189,35 @@ function useInvitePulse(selected: boolean, reduceMotion: boolean) {
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const elapsedRef = useRef(0);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const group = groupRef.current;
     if (!group) return;
-    elapsedRef.current += delta;
 
-    if (reduceMotion) {
+    if (reduceMotion || !selected) {
       group.scale.setScalar(1);
       if (materialRef.current) {
         materialRef.current.emissiveIntensity = selected ? 1.35 : 0.35;
       }
+      // Idle / unselected: do not invalidate — keeps frameloop="demand" parked.
       return;
     }
 
-    const speed = selected ? 5.2 : 1.35;
-    const amp = selected ? 0.055 : 0.07;
+    elapsedRef.current += delta;
+    const speed = 5.2;
+    const amp = 0.055;
     const wave = Math.sin(elapsedRef.current * speed);
     const target = 1 + wave * amp;
     group.scale.setScalar(THREE.MathUtils.lerp(group.scale.x, target, 0.14));
 
     if (materialRef.current) {
-      const base = selected ? 1.15 : 0.28;
-      const glowAmp = selected ? 0.55 : 0.42;
+      const base = 1.15;
+      const glowAmp = 0.55;
       materialRef.current.emissiveIntensity =
         base + (wave * 0.5 + 0.5) * glowAmp;
     }
+
+    // Keep the demand loop alive only while the selected region is pulsing.
+    state.invalidate();
   });
 
   return { groupRef, materialRef };
@@ -424,6 +428,24 @@ function WebGLLifecycleCleanup() {
   return null;
 }
 
+/**
+ * With `frameloop="demand"`, push a redraw when selection / morph / hover changes.
+ */
+function InvalidateOnInteraction() {
+  const invalidate = useThree((s) => s.invalidate);
+  const selectedId = useMeasurementStore((s) => s.selectedId);
+  const hoveredId = useMeasurementStore((s) => s.hoveredId);
+  const morphBust = useMeasurementStore((s) => s.bodyMorph.bust);
+  const morphWaist = useMeasurementStore((s) => s.bodyMorph.waist);
+  const morphHips = useMeasurementStore((s) => s.bodyMorph.hips);
+
+  useEffect(() => {
+    invalidate();
+  }, [invalidate, selectedId, hoveredId, morphBust, morphWaist, morphHips]);
+
+  return null;
+}
+
 function MannequinCanvas({
   onContextLost,
   scrollProgress,
@@ -460,7 +482,10 @@ function MannequinCanvas({
       // Cap DPR to protect scroll cinema from dropped frames on HiDPI.
       dpr={[1, 1.15]}
       performance={{ min: 0.5, max: 1, debounce: 200 }}
-      frameloop={dismantling ? "never" : "always"}
+      // Cinema needs a continuous loop; atelier view parks the GPU when idle.
+      frameloop={
+        dismantling ? "never" : cinemaEnabled ? "always" : "demand"
+      }
       gl={{
         antialias: true,
         alpha: true,
@@ -490,6 +515,7 @@ function MannequinCanvas({
       <Suspense fallback={null}>
         <WebGLContextGuard onContextLost={onContextLost} />
         <WebGLLifecycleCleanup />
+        {!cinemaEnabled ? <InvalidateOnInteraction /> : null}
         <LuxurySceneAtmosphere progress={scrollProgress} />
         <LuxuryStudioLighting progress={scrollProgress} />
         {/* No Environment / HDR — those fetch remote assets and break offline. */}

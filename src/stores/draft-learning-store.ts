@@ -25,8 +25,9 @@ import {
   recordPracticeAttempt,
 } from "@/features/learning/lib/ecosystem";
 import { useMasteryStore } from "@/stores/mastery-store";
+import { useUnitStore } from "@/stores/unit-store";
 
-export type DraftLearningMode = "lesson" | "practice" | "engine";
+export type DraftLearningMode = "lesson" | "modules" | "practice" | "engine";
 
 type DraftLearningState = {
   hydrated: boolean;
@@ -216,7 +217,12 @@ export const useDraftLearningStore = create<DraftLearningState>((set, get) => ({
       practiceBestScore,
     } = get();
     const answers = getCorrectAnswers(practiceBody, practiceInputs);
-    const { correct, total, fieldResults } = scoreGuesses(practiceGuesses, answers);
+    const unit = useUnitStore.getState().unit;
+    const { correct, total, fieldResults } = scoreGuesses(
+      practiceGuesses,
+      answers,
+      unit,
+    );
     const attempts = practiceAttempts + 1;
     const perfect = correct === total;
     const completions = perfect ? practiceCompletions + 1 : practiceCompletions;

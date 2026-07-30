@@ -37,7 +37,7 @@ export function VoiceMentorFab() {
 
   return (
     <>
-      <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 z-40 sm:left-[max(1rem,calc(50%-14rem))]">
+      <div className="pointer-events-none fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 z-50 sm:left-[max(1rem,calc(50%-14rem))]">
         <div className="relative">
           {!reduceMotion && listening ? (
             <span
@@ -67,11 +67,11 @@ export function VoiceMentorFab() {
             aria-pressed={listening}
             className={cn(
               "pointer-events-auto relative flex size-14 items-center justify-center rounded-full",
-              "transition hover:brightness-110 active:scale-[0.96]",
+              "backdrop-blur-xl backdrop-saturate-150 transition hover:brightness-110 active:scale-[0.96]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               listening
-                ? "neon-voice bg-[color-mix(in_oklch,var(--neon-voice)_22%,black)] text-neon-voice ring-1 ring-neon-voice/50"
-                : "bg-primary text-primary-foreground shadow-[0_14px_36px_-10px_color-mix(in_oklch,var(--champagne)_45%,transparent)] ring-1 ring-champagne/30",
+                ? "neon-voice bg-[color-mix(in_oklch,var(--neon-voice)_28%,transparent)] text-neon-voice ring-1 ring-neon-voice/50"
+                : "bg-primary/80 text-primary-foreground shadow-[0_14px_36px_-10px_color-mix(in_oklch,var(--champagne)_45%,transparent)] ring-1 ring-champagne/35",
             )}
           >
             {listening ? (
@@ -92,7 +92,7 @@ export function VoiceMentorFab() {
             animate={{ opacity: 1, y: 0 }}
             exit={reduceMotion ? undefined : { opacity: 0, y: 12 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="glass-panel fixed bottom-[calc(9.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-40 max-w-md rounded-3xl p-4 shadow-[0_24px_60px_-28px_rgba(15,23,28,0.55)] sm:left-[max(1rem,calc(50%-14rem))] sm:right-auto sm:w-[22rem]"
+            className="glass-panel fixed bottom-[calc(9.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-50 max-w-md rounded-3xl p-4 shadow-[0_24px_60px_-28px_rgba(15,23,28,0.55)] backdrop-blur-xl sm:left-[max(1rem,calc(50%-14rem))] sm:right-auto sm:w-[22rem]"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
@@ -146,7 +146,7 @@ export function VoiceMentorFab() {
                 </p>
                 <p className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Volume2 className="size-3.5" aria-hidden />
-                  Reading aloud with device speech
+                  Speaking at device volume
                 </p>
               </div>
             ) : null}

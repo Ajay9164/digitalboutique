@@ -37,10 +37,8 @@ export function BottomNav() {
     >
       <div
         className={cn(
-          "pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-[1.75rem] p-1.5 sm:gap-1",
-          "border border-champagne/20 bg-card/75 shadow-[0_16px_48px_-12px_rgba(0,0,0,0.65)]",
-          "backdrop-blur-2xl backdrop-saturate-150",
-          "shadow-[0_0_40px_-20px_color-mix(in_oklch,var(--champagne)_35%,transparent)]",
+          "glass-panel pointer-events-auto mx-auto flex max-w-lg items-stretch gap-0.5 rounded-[1.75rem] p-1.5 sm:gap-1",
+          "backdrop-blur-xl backdrop-saturate-150",
         )}
       >
         {NAV_ITEMS.map((item) => {

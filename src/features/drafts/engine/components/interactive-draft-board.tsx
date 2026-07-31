@@ -21,6 +21,7 @@ import {
   type Point,
 } from "@/features/drafts/engine/konva-geometry";
 import { useUnit } from "@/hooks/use-unit";
+import { useDraftStore } from "@/stores/draft-store";
 import { cn } from "@/lib/utils";
 
 export type DraftBoardHandle = {
@@ -70,11 +71,17 @@ function InteractiveDraftBoardInner(
   ref: React.Ref<DraftBoardHandle>,
 ) {
   const { unit } = useUnit();
+  const setBoardControls = useDraftStore((s) => s.setBoardControls);
+  const setBoardView = useDraftStore((s) => s.setBoardView);
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
   const [size, setSize] = useState({ width: 360, height: 420 });
-  const [scale, setScale] = useState(1);
-  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(
+    () => useDraftStore.getState().board.scale,
+  );
+  const [stagePos, setStagePos] = useState(
+    () => useDraftStore.getState().board.stagePos,
+  );
   const [isPanning, setIsPanning] = useState(false);
   const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(
     null,
@@ -85,10 +92,17 @@ function InteractiveDraftBoardInner(
     [calculations, unit],
   );
 
-  const [controls, setControls] = useState(() => defaultControlPoints(baseGeo));
-  const [history, setHistory] = useState<Array<Record<ControlPointId, Point>>>(() => [
-    defaultControlPoints(baseGeo),
-  ]);
+  const [controls, setControls] = useState(() => {
+    const cached = useDraftStore.getState().board.controls;
+    return cached ?? defaultControlPoints(baseGeo);
+  });
+  const [history, setHistory] = useState<Array<Record<ControlPointId, Point>>>(
+    () => {
+      const cached = useDraftStore.getState().board.controls;
+      const initial = cached ?? defaultControlPoints(baseGeo);
+      return [initial];
+    },
+  );
   const [historyIndex, setHistoryIndex] = useState(0);
   const skipHistory = useRef(false);
 
@@ -145,7 +159,10 @@ function InteractiveDraftBoardInner(
     };
     setControls((prev) => {
       const next = { ...prev, [id]: nextPoint };
-      if (commit) pushHistory(next);
+      if (commit) {
+        pushHistory(next);
+        setBoardControls(next);
+      }
       return next;
     });
   };
@@ -173,6 +190,13 @@ function InteractiveDraftBoardInner(
     setStagePos({
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
+    });
+    setBoardView({
+      scale: newScale,
+      stagePos: {
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale,
+      },
     });
   };
 
@@ -247,6 +271,7 @@ function InteractiveDraftBoardInner(
             onClick={() => {
               setScale(1);
               setStagePos({ x: 0, y: 0 });
+              setBoardView({ scale: 1, stagePos: { x: 0, y: 0 } });
             }}
           >
             Reset view
@@ -276,10 +301,16 @@ function InteractiveDraftBoardInner(
           });
         }}
         onMouseUp={() => {
+          if (isPanning) {
+            setBoardView({ scale, stagePos });
+          }
           setIsPanning(false);
           panRef.current = null;
         }}
         onMouseLeave={() => {
+          if (isPanning) {
+            setBoardView({ scale, stagePos });
+          }
           setIsPanning(false);
           panRef.current = null;
         }}

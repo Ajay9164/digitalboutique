@@ -6,6 +6,8 @@ import { FloatingActionButton } from "@/components/layout/floating-action-button
 import { VoiceMentorFab } from "@/components/layout/voice-mentor-fab";
 import { TopHeader } from "@/components/layout/top-header";
 import { MasteryCelebration } from "@/components/learning/mastery-celebration";
+import { RankUpCelebration } from "@/components/learning/rank-up-celebration";
+import { MaitreDWelcomeListener } from "@/components/layout/maitre-d-welcome-listener";
 
 const PwaInstallBanner = dynamic(
   () =>
@@ -40,6 +42,7 @@ export function AppShell({ children }: AppShellProps) {
       </div>
 
       <TopHeader />
+      <MaitreDWelcomeListener />
 
       <main
         id="main-content"
@@ -50,6 +53,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <PwaInstallBanner />
       <MasteryCelebration />
+      <RankUpCelebration />
       <FloatingActionButton />
       <VoiceMentorFab />
       <BottomNav />

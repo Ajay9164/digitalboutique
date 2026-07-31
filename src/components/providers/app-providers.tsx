@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DailyStreakListener } from "@/components/learning/daily-streak-listener";
+import { PwaUpdateListener } from "@/components/pwa/pwa-update-listener";
 import { installConsoleWarnFilters } from "@/lib/console-filters";
 import { installDevServiceWorkerCleanup } from "@/lib/dev-sw-cleanup";
 
@@ -27,7 +29,11 @@ export function AppProviders({ children }: AppProvidersProps) {
       enableSystem={false}
       disableTransitionOnChange
     >
-      <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+      <TooltipProvider delayDuration={200}>
+        {children}
+        <DailyStreakListener />
+        <PwaUpdateListener />
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

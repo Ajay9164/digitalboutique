@@ -95,7 +95,9 @@ function isRscPayload(request: Request, url: URL): boolean {
  */
 const serwist = new Serwist({
   precacheEntries: sanitizePrecacheEntries(self.__SW_MANIFEST),
-  skipWaiting: true,
+  // Stay waiting so the client can prompt ("Update Now") before activation.
+  // Serwist still listens for `{ type: "SKIP_WAITING" }` when this is false.
+  skipWaiting: false,
   clientsClaim: true,
   navigationPreload: true,
   precacheOptions: {

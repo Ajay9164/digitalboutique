@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { AppProviders } from "@/components/providers/app-providers";
 import { RootOverlays } from "@/components/layout/root-overlays";
 import { SkipLink } from "@/components/shared/skip-link";
+import { Toaster } from "@/components/ui/sonner";
 import {
   APP_DEFAULT_TITLE,
   APP_DESCRIPTION,
@@ -86,6 +87,7 @@ export default function RootLayout({
           <SkipLink />
           {children}
           <RootOverlays />
+          <Toaster />
         </AppProviders>
       </body>
     </html>

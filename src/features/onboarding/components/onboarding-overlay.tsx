@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NotificationManager } from "@/lib/notifications/notification-manager";
 import { useUserStore } from "@/stores/user-store";
 import { useShallow } from "zustand/react/shallow";
 
@@ -40,6 +41,8 @@ export function OnboardingOverlay() {
   const handleEnter = () => {
     if (!canSubmit) return;
     completeOnboarding(name);
+    // User gesture → request permission, then local welcome push (no server).
+    void NotificationManager.welcomeAfterOnboarding();
   };
 
   return (

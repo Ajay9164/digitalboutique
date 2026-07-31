@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { useIsMounted } from "@/hooks/use-mounted";
 import { useUiStore } from "@/stores/ui-store";
 import { MasteryProgressRing } from "@/components/learning/mastery-progress-ring";
+import { StreakFlame } from "@/components/learning/streak-flame";
 import { UnitToggle } from "@/components/shared/unit-toggle";
 import { useMasteryStore } from "@/stores/mastery-store";
 import { useUserStore } from "@/stores/user-store";
@@ -103,6 +104,8 @@ export function TopHeader() {
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-2.5">
           <UnitToggle compact />
+
+          <StreakFlame />
 
           <Link
             href="/progress"

@@ -2,25 +2,20 @@
 
 import { useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { useShallow } from "zustand/react/shallow";
 import { FileDown, FileImage, Grid3x3, Magnet, Printer } from "lucide-react";
 import type { DraftBoardHandle } from "@/features/drafts/engine/components/interactive-draft-board";
 import { MeasurementForm } from "@/features/drafts/engine/components/measurement-form";
 import { CalculationPanel } from "@/features/drafts/engine/components/calculation-panel";
 import { SmartFabricSelector } from "@/features/drafts/engine/components/smart-fabric-selector";
 import { computeEngineCalculations } from "@/features/drafts/engine/calculations";
-import {
-  applyFabricAdjustments,
-  type FabricId,
-} from "@/features/drafts/engine/fabric-profiles";
-import {
-  DEFAULT_ENGINE_VALUES,
-  type EngineFormValues,
-} from "@/features/drafts/engine/schema";
+import { applyFabricAdjustments } from "@/features/drafts/engine/fabric-profiles";
 import {
   exportStagePdf,
   exportStagePng,
   openPrintLayout,
 } from "@/features/drafts/engine/export";
+import { useDraftStore } from "@/stores/draft-store";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -45,10 +40,29 @@ const DRAFT_CALC_DEBOUNCE_MS = 180;
 export function DraftingEngine({ className }: { className?: string }) {
   const boardRef = useRef<DraftBoardHandle>(null);
   const { unit } = useUnit();
-  const [values, setValues] = useState<EngineFormValues>(DEFAULT_ENGINE_VALUES);
-  const [fabric, setFabric] = useState<FabricId | null>(null);
-  const [showGrid, setShowGrid] = useState(true);
-  const [snapEnabled, setSnapEnabled] = useState(true);
+  const {
+    values,
+    fabric,
+    showGrid,
+    snapEnabled,
+    restoreEpoch,
+    setValues,
+    setFabric,
+    setShowGrid,
+    setSnapEnabled,
+  } = useDraftStore(
+    useShallow((s) => ({
+      values: s.values,
+      fabric: s.fabric,
+      showGrid: s.showGrid,
+      snapEnabled: s.snapEnabled,
+      restoreEpoch: s.restoreEpoch,
+      setValues: s.setValues,
+      setFabric: s.setFabric,
+      setShowGrid: s.setShowGrid,
+      setSnapEnabled: s.setSnapEnabled,
+    })),
+  );
   const [exportError, setExportError] = useState<string | null>(null);
 
   const debouncedValues = useDebouncedValue(values, DRAFT_CALC_DEBOUNCE_MS);
@@ -108,7 +122,7 @@ export function DraftingEngine({ className }: { className?: string }) {
           variant={showGrid ? "default" : "outline"}
           className="rounded-xl"
           aria-pressed={showGrid}
-          onClick={() => setShowGrid((value) => !value)}
+          onClick={() => setShowGrid(!showGrid)}
         >
           <Grid3x3 aria-hidden="true" />
           Grid
@@ -119,7 +133,7 @@ export function DraftingEngine({ className }: { className?: string }) {
           variant={snapEnabled ? "default" : "outline"}
           className="rounded-xl"
           aria-pressed={snapEnabled}
-          onClick={() => setSnapEnabled((value) => !value)}
+          onClick={() => setSnapEnabled(!snapEnabled)}
         >
           <Magnet aria-hidden="true" />
           Snap
@@ -180,6 +194,7 @@ export function DraftingEngine({ className }: { className?: string }) {
       ) : null}
 
       <InteractiveDraftBoard
+        key={restoreEpoch}
         ref={boardRef}
         calculations={calculations}
         showGrid={showGrid}

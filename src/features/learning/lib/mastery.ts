@@ -33,7 +33,7 @@ export type MasteryProgress = {
 
 export function resolveMastery(totalXp: number, modulesCompleted = 0): MasteryProgress {
   const xp = Math.max(0, Math.floor(totalXp));
-  let current = MASTERY_LEVELS[0];
+  let current = MASTERY_LEVELS[0]!;
   for (const tier of MASTERY_LEVELS) {
     if (xp >= tier.minXp) current = tier;
   }
@@ -56,4 +56,18 @@ export function resolveMastery(totalXp: number, modulesCompleted = 0): MasteryPr
     xpForNextLevel:
       current.maxXp === Number.POSITIVE_INFINITY ? null : current.maxXp - xp,
   };
+}
+
+/**
+ * If `nextXp` crosses into a higher rank than `previousXp`, return that new tier.
+ * Otherwise null (same rank, or XP went down).
+ */
+export function didCrossRankBoundary(
+  previousXp: number,
+  nextXp: number,
+): MasteryLevel | null {
+  const prev = resolveMastery(previousXp);
+  const next = resolveMastery(nextXp);
+  if (next.level <= prev.level) return null;
+  return MASTERY_LEVELS.find((tier) => tier.level === next.level) ?? null;
 }
